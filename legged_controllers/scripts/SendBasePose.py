@@ -3,7 +3,7 @@ from geometry_msgs.msg import PoseStamped
 import numpy as np
 
 def talker():
-    pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
+    pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
     rospy.init_node('send_base_pose', anonymous=True)
     rate = rospy.Rate(10) # 10hz
     while not rospy.is_shutdown():
@@ -12,12 +12,12 @@ def talker():
         pose.header.frame_id = "base"
         pose.pose.position.x = 0.0
         pose.pose.position.y = 0.0
-        pose.pose.position.z = 0.1
+        pose.pose.position.z = 0.2
         pose.pose.orientation.x = 0.0
         pose.pose.orientation.y = 0.0
         pose.pose.orientation.z = 0.0
         pose.pose.orientation.w = 1.0
-        # rospy.loginfo(pose)
+        rospy.loginfo(pose)
         pub.publish(pose)
         rate.sleep()
 

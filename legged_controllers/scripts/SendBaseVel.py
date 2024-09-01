@@ -10,7 +10,7 @@ def talker():
         vel = Twist()
         vel.linear.x = 0.0
         vel.linear.y = 0.0
-        vel.linear.z = 0.0
+        vel.linear.z = -0.1
         vel.angular.x = 0.0
         vel.angular.y = 0.0
         vel.angular.z = 0.0
