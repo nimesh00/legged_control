@@ -68,6 +68,8 @@ bool LeggedController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
   // Whole body control
   wbc_ = std::make_shared<WeightedWbc>(leggedInterface_->getPinocchioInterface(), leggedInterface_->getCentroidalModelInfo(),
                                        *eeKinematicsPtr_);
+  didc_ = std::make_shared<DistributedIDC>(leggedInterface_->getPinocchioInterface(), leggedInterface_->getCentroidalModelInfo(),
+                                       *eeKinematicsPtr_);
   wbc_->loadTasksSetting(taskFile, verbose);
 
   // Safety Checker
@@ -117,10 +119,12 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
   currentObservation_.input = optimizedInput;
 
   wbcTimer_.startTimer();
-  vector_t x = wbc_->update(optimizedState, optimizedInput, measuredRbdState_, plannedMode, period.toSec());
+  // vector_t x = wbc_->update(optimizedState, optimizedInput, measuredRbdState_, plannedMode, period.toSec());
+  vector_t tau_ff = didc_->update(optimizedState, optimizedInput, measuredRbdState_, plannedMode, period.toSec());
   wbcTimer_.endTimer();
 
-  vector_t torque = x.tail(12);
+  // vector_t torque = x.tail(12);
+  vector_t torque = tau_ff;
 
   vector_t posDes = centroidal_model::getJointAngles(optimizedState, leggedInterface_->getCentroidalModelInfo());
   vector_t velDes = centroidal_model::getJointVelocities(optimizedInput, leggedInterface_->getCentroidalModelInfo());
@@ -132,8 +136,13 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
   }
 
   for (size_t j = 0; j < leggedInterface_->getCentroidalModelInfo().actuatedDofNum; ++j) {
-    hybridJointHandles_[j].setCommand(posDes(j), velDes(j), 0, 3, torque(j));
+    hybridJointHandles_[j].setCommand(posDes(j), velDes(j), 10, 3, torque(j));
   }
+  // for (size_t j = 0; j < 4; ++j) {
+  //   hybridJointHandles_[3 * j + 0].setCommand(posDes(3 * j + 0), velDes(3 * j + 0), 100, 3, torque(3 * j + 0));
+  //   hybridJointHandles_[3 * j + 1].setCommand(posDes(3 * j + 1), velDes(3 * j + 1), 120, 3, torque(3 * j + 1));
+  //   hybridJointHandles_[3 * j + 2].setCommand(posDes(3 * j + 2), velDes(3 * j + 2), 120, 3, torque(3 * j + 2));
+  // }
 
   // Visualization
   robotVisualizer_->update(currentObservation_, mpcMrtInterface_->getPolicy(), mpcMrtInterface_->getCommand());

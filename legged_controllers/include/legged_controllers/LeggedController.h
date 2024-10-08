@@ -16,6 +16,7 @@
 #include <legged_estimation/StateEstimateBase.h>
 #include <legged_interface/LeggedInterface.h>
 #include <legged_wbc/WbcBase.h>
+#include <legged_didc/DistributedIDC.h>
 
 #include "legged_controllers/SafetyChecker.h"
 #include "legged_controllers/visualization/LeggedSelfCollisionVisualization.h"
@@ -58,6 +59,7 @@ class LeggedController : public controller_interface::MultiInterfaceController<H
 
   // Whole Body Control
   std::shared_ptr<WbcBase> wbc_;
+  std::shared_ptr<DistributedIDC> didc_;
   std::shared_ptr<SafetyChecker> safetyChecker_;
 
   // Nonlinear MPC

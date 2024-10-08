@@ -7,13 +7,23 @@
 
 #include <legged_hw/LeggedHW.h>
 
-#ifdef UNITREE_SDK_3_3_1
-#include "unitree_legged_sdk_3_3_1/safety.h"
-#include "unitree_legged_sdk_3_3_1/udp.h"
-#elif UNITREE_SDK_3_8_0
+#include "dds/dds_publisher.hpp"
+#include "dds/dds_subscriber.hpp"
+
+#include "LowCmd.hpp"
+#include "LowState.hpp"
+
+// #ifdef UNITREE_SDK_3_3_1
+// #include "unitree_legged_sdk_3_3_1/safety.h"
+// #include "unitree_legged_sdk_3_3_1/udp.h"
+// #elif UNITREE_SDK_3_8_0
 #include "unitree_legged_sdk_3_8_0/safety.h"
 #include "unitree_legged_sdk_3_8_0/udp.h"
-#endif
+// #endif
+
+using namespace org::eclipse::cyclonedds;
+using namespace unitree_go::msg::dds_;
+// using namespace go2py_messages::msg::dds_;
 
 namespace legged {
 const std::vector<std::string> CONTACT_SENSOR_NAMES = {"RF_FOOT", "LF_FOOT", "RH_FOOT", "LH_FOOT"};
@@ -32,9 +42,9 @@ struct UnitreeImuData {
   double linearAccCov_[9];   // NOLINT(modernize-avoid-c-arrays)
 };
 
-class UnitreeHW : public LeggedHW {
+class UnitreeDDS : public LeggedHW {
  public:
-  UnitreeHW() = default;
+  UnitreeDDS() = default;
   /** \brief Get necessary params from param server. Init hardware_interface.
    *
    * Get params from param server and check whether these params are set. Load urdf of robot. Set up transmission and
@@ -53,6 +63,8 @@ class UnitreeHW : public LeggedHW {
    * @param period Current time - last time
    */
   void read(const ros::Time& time, const ros::Duration& period) override;
+  void copyLowStateFromDDS();
+  void writeLowCmdToDDS();
 
   /** \brief Comunicate with hardware. Publish command to robot.
    *
@@ -91,6 +103,12 @@ class UnitreeHW : public LeggedHW {
   ros::Publisher joyPublisher_;
   ros::Publisher contactPublisher_;
   ros::Time lastJoyPub_, lastContactPub_;
+
+  std::unique_ptr<DDSPublisher<LowCmd_>> low_cmd_dds_pub_ = NULL;
+  std::unique_ptr<DDSSubscriber<LowState_>> low_state_dds_sub_ = NULL;
+
+  LowState_ lowState_dds;
+  LowCmd_ lowCmd_dds;
 };
 
 }  // namespace legged

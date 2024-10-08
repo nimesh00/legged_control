@@ -131,7 +131,7 @@ rollout
 
 mpc
 {
-  timeHorizon                     1.0  ; [s]
+  timeHorizon                     2.0  ; [s]
   solutionTimeWindow              -1   ; maximum [s]
   coldStart                       false
 
@@ -160,18 +160,18 @@ initialState
    (11,0) 0.0     ; theta_base_x
 
    ;; Leg Joint Positions: [LF, LH, RF, RH] ;;
-   (12,0) -0.20   ; LF_HAA
-   (13,0)  0.72   ; LF_HFE
-   (14,0) -1.44   ; LF_KFE
-   (15,0) -0.20   ; LH_HAA
-   (16,0)  0.72   ; LH_HFE
-   (17,0) -1.44   ; LH_KFE
-   (18,0)  0.20   ; RF_HAA
-   (19,0)  0.72   ; RF_HFE
-   (20,0) -1.44   ; RF_KFE
-   (21,0)  0.20   ; RH_HAA
-   (22,0)  0.72   ; RH_HFE
-   (23,0) -1.44   ; RH_KFE
+   (12,0) -0.0   ; LF_HAA
+   (13,0)  0.67   ; LF_HFE
+   (14,0) -1.3   ; LF_KFE
+   (15,0) -0.0   ; LH_HAA
+   (16,0)  0.67   ; LH_HFE
+   (17,0) -1.3   ; LH_KFE
+   (18,0)  0.0   ; RF_HAA
+   (19,0)  0.67   ; RF_HFE
+   (20,0) -1.3   ; RF_KFE
+   (21,0)  0.0   ; RH_HAA
+   (22,0)  0.67   ; RH_HFE
+   (23,0) -1.3   ; RH_KFE
 }
 
 ; standard state weight matrix
@@ -188,8 +188,8 @@ Q
   (5,5)   30.0     ; L_z / robotMass
 
   ;; Base Pose: [position, orientation] ;;
-  (6,6)   1000.0   ; p_base_x
-  (7,7)   1000.0   ; p_base_y
+  (6,6)   10.0   ; p_base_x
+  (7,7)   10.0   ; p_base_y
   (8,8)   1500.0   ; p_base_z
   (9,9)   100.0    ; theta_base_z
   (10,10) 300.0    ; theta_base_y

@@ -1,22 +1,16 @@
 cmake_minimum_required(VERSION 3.10)
-project(legged_controllers)
+project(legged_didc)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-## Find catkin macros and libraries
 find_package(catkin REQUIRED
         COMPONENTS
         roscpp
-        legged_common
-        legged_interface
-        legged_didc
-        legged_wbc
-        legged_estimation
-        controller_interface
-        ocs2_legged_robot_ros
-        ocs2_self_collision_visualization
-        angles
+        ocs2_legged_robot
+        qpoases_catkin
         )
+
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(pinocchio REQUIRED pinocchio)
@@ -28,15 +22,9 @@ catkin_package(
         ${PROJECT_NAME}
         CATKIN_DEPENDS
         roscpp
-        legged_common
-        legged_interface
-        legged_didc
-        legged_wbc
-        legged_estimation
-        controller_interface
-        ocs2_legged_robot_ros
-        ocs2_self_collision_visualization
-        angles
+        ocs2_legged_robot
+        DEPENDS
+        pinocchio
 )
 
 ###########
@@ -46,6 +34,7 @@ catkin_package(
 include_directories(
         include
         ${catkin_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIRS}
         ${pinocchio_INCLUDE_DIRS}
 )
 
@@ -53,9 +42,9 @@ link_directories(
         ${pinocchio_LIBRARY_DIRS}
 )
 
-## Declare a cpp library
 add_library(${PROJECT_NAME}
-        src/LeggedController.cpp
+        src/DistributedIDC.cpp
+        src/ControllerBase.cpp
         )
 
 target_link_libraries(${PROJECT_NAME}
@@ -65,21 +54,6 @@ target_link_libraries(${PROJECT_NAME}
 
 target_compile_options(${PROJECT_NAME} PUBLIC ${OCS2_CXX_FLAGS})
 
-
-# Target trajectories publish node
-add_executable(legged_target_trajectories_publisher
-        src/TargetTrajectoriesPublisher.cpp
-        )
-add_dependencies(legged_target_trajectories_publisher
-        ${PROJECT_NAME}
-        ${catkin_EXPORTED_TARGETS}
-        )
-target_link_libraries(legged_target_trajectories_publisher
-        ${PROJECT_NAME}
-        ${catkin_LIBRARIES}
-        )
-target_compile_options(legged_target_trajectories_publisher PRIVATE ${OCS2_CXX_FLAGS})
-
 #########################
 ###   CLANG TOOLING   ###
 #########################
@@ -87,7 +61,7 @@ find_package(cmake_clang_tools QUIET)
 if (cmake_clang_tools_FOUND)
     message(STATUS "Run clang tooling for target " ${PROJECT_NAME})
     add_clang_tooling(
-            TARGETS ${PROJECT_NAME} legged_target_trajectories_publisher
+            TARGETS ${PROJECT_NAME}
             SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include
             CT_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
             CF_WERROR
@@ -111,13 +85,19 @@ install(DIRECTORY include/${PROJECT_NAME}/
         FILES_MATCHING PATTERN "*.h"
         )
 
-# Install plugins
-install(FILES legged_controllers_plugins.xml
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-        )
+#############
+## Testing ##
+#############
+if (CATKIN_ENABLE_TESTING)
+    catkin_add_gtest(${PROJECT_NAME}_test
+            test/HoQp_test.cpp
+            )
 
-catkin_install_python(PROGRAMS 
-        scripts/SendBasePose.py
-        scripts/SendBaseVel.py
-        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-        )
+    target_link_libraries(${PROJECT_NAME}_test
+            ${PROJECT_NAME}
+            ${pinocchio_LIBRARIES}
+            gtest_main
+            )
+
+    target_compile_options(${PROJECT_NAME}_test PUBLIC ${FLAGS})
+endif (CATKIN_ENABLE_TESTING)

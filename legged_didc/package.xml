@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-    <name>legged_go2</name>
+    <name>legged_didc</name>
     <version>0.0.0</version>
-    <description>ROS control warped interface for Unitree Go2 Robot</description>
+    <description>Distributed inverse dynamics control</description>
     <maintainer email="nimesh6798@gmail.com">Nimesh Khandelwal</maintainer>
 
     <license>BSD</license>
@@ -12,5 +12,7 @@
 
     <build_depend>cmake_clang_tools</build_depend>
     <depend>roscpp</depend>
-    <depend>legged_hw</depend>
+    <depend>ocs2_legged_robot</depend>
+    <depend>qpoases_catkin</depend>
+    <depend>pinocchio</depend>
 </package>

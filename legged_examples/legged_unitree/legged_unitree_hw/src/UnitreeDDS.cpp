@@ -1,7 +1,15 @@
-#include "legged_go2/UnitreeDDS.h"
 
+//
+// Created by qiayuan on 1/24/22.
+//
 
+#include "legged_unitree_hw/UnitreeDDS.h"
+
+#ifdef UNITREE_SDK_3_3_1
+#include "unitree_legged_sdk_3_3_1/unitree_joystick.h"
+#elif UNITREE_SDK_3_8_0
 #include "unitree_legged_sdk_3_8_0/joystick.h"
+#endif
 
 #include <sensor_msgs/Joy.h>
 #include <std_msgs/Int16MultiArray.h>
@@ -18,9 +26,16 @@ bool UnitreeDDS::init(ros::NodeHandle& root_nh, ros::NodeHandle& robot_hw_nh) {
   setupImu();
   setupContactSensor(robot_hw_nh);
 
-  low_cmd_dds_pub_.reset(new DDSPublisher<LowCmd_>("rt/lowcmd"));
-  go2py_low_cmd_dds_pub_.reset(new DDSPublisher<Go2pyLowCmd_>("rt/go2py/low_cmd"));
-  low_state_dds_sub_.reset(new DDSSubscriber<LowState_>("rt/lowstate"));
+// #ifdef UNITREE_SDK_3_3_1
+//   udp_ = std::make_shared<UNITREE_LEGGED_SDK::UDP>(UNITREE_LEGGED_SDK::LOWLEVEL);
+// #elif UNITREE_SDK_3_8_0
+  udp_ = std::make_shared<UNITREE_LEGGED_SDK::UDP>(UNITREE_LEGGED_SDK::LOWLEVEL, 8090, "192.168.123.10", 8007);
+// #endif
+
+  udp_->InitCmdData(lowCmd_);
+
+  low_cmd_dds_pub_.reset(new DDSPublisher<LowCmd_>("rt/low_cmd"));
+  low_state_dds_sub_.reset(new DDSSubscriber<LowState_>("rt/low_state"));
 
   std::string robot_type;
   root_nh.getParam("robot_type", robot_type);
@@ -31,8 +46,7 @@ bool UnitreeDDS::init(ros::NodeHandle& root_nh, ros::NodeHandle& robot_hw_nh) {
 //     safety_ = std::make_shared<UNITREE_LEGGED_SDK::Safety>(UNITREE_LEGGED_SDK::LeggedType::Aliengo);
 //   }
 // #elif UNITREE_SDK_3_8_0
-  if (robot_type == "go2") {
-    // Force go2 safety routine on go2 commands for basic sanitization (hopefully)
+  if (robot_type == "go1") {
     safety_ = std::make_shared<UNITREE_LEGGED_SDK::Safety>(UNITREE_LEGGED_SDK::LeggedType::Go1);
   }
 // #endif
@@ -118,14 +132,6 @@ void UnitreeDDS::writeLowCmdToDDS() {
         lowCmd_dds.motor_cmd()[i].kp() = lowCmd_.motorCmd[i].Kp;
         lowCmd_dds.motor_cmd()[i].kd() = lowCmd_.motorCmd[i].Kd;
     }
-
-    for (int i = 0; i < 12; ++i) {
-        go2pyLowCmd_dds.q()[i] = lowCmd_.motorCmd[i].q;
-        go2pyLowCmd_dds.dq()[i] = lowCmd_.motorCmd[i].dq;
-        go2pyLowCmd_dds.tau()[i] = lowCmd_.motorCmd[i].tau;
-        go2pyLowCmd_dds.kp()[i] = lowCmd_.motorCmd[i].Kp;
-        go2pyLowCmd_dds.kd()[i] = lowCmd_.motorCmd[i].Kd;
-    }
 }
 
 void UnitreeDDS::write(const ros::Time& /*time*/, const ros::Duration& /*period*/) {
@@ -138,11 +144,12 @@ void UnitreeDDS::write(const ros::Time& /*time*/, const ros::Duration& /*period*
   }
   safety_->PositionLimit(lowCmd_);
   safety_->PowerProtect(lowCmd_, lowState_, powerLimit_);
+//   udp_->SetSend(lowCmd_);
+//   udp_->Send();
 
     writeLowCmdToDDS();
 
-    // low_cmd_dds_pub_ -> publish(lowCmd_dds);
-    go2py_low_cmd_dds_pub_ -> publish(go2pyLowCmd_dds);
+    low_cmd_dds_pub_ -> publish(lowCmd_dds);
 }
 
 bool UnitreeDDS::setupJoints() {

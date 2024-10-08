@@ -15,7 +15,6 @@
 #include "Go2pyLowCmd.hpp"
 
 #include "unitree_legged_sdk_3_8_0/safety.h"
-#include "unitree_legged_sdk_3_8_0/udp.h"
 
 using namespace org::eclipse::cyclonedds;
 using namespace unitree_go::msg::dds_;
@@ -53,7 +52,6 @@ class UnitreeDDS : public LeggedHW {
   bool init(ros::NodeHandle& root_nh, ros::NodeHandle& robot_hw_nh) override;
   /** \brief Communicate with hardware. Get data, status of robot.
    *
-   * Call @ref UNITREE_LEGGED_SDK::UDP::Recv() to get robot's state.
    *
    * @param time Current time
    * @param period Current time - last time
@@ -64,7 +62,6 @@ class UnitreeDDS : public LeggedHW {
   /** \brief Comunicate with hardware. Publish command to robot.
    *
    * Propagate joint state to actuator state for the stored
-   * transmission. Limit cmd_effort into suitable value. Call @ref UNITREE_LEGGED_SDK::UDP::Recv(). Publish actuator
    * current state.
    *
    * @param time Current time
@@ -84,7 +81,6 @@ class UnitreeDDS : public LeggedHW {
 
   bool setupContactSensor(ros::NodeHandle& nh);
 
-  std::shared_ptr<UNITREE_LEGGED_SDK::UDP> udp_;
   std::shared_ptr<UNITREE_LEGGED_SDK::Safety> safety_;
   UNITREE_LEGGED_SDK::LowState lowState_{};
   UNITREE_LEGGED_SDK::LowCmd lowCmd_{};
