@@ -1,5 +1,30 @@
 # legged_control
 
+> [!NOTE]
+> **This software is not supported anymore! The authors of this software are developing a completely new framework and are not working on this project anymore. Please excuse any inconvenience this might cause.**
+
+> [!NOTE]
+> You might be interested in this pipeline with perception, check [legged_perceptive](https://github.com/qiayuanl/legged_perceptive).
+
+## Publications
+
+If you use this work in an academic context, please consider citing the following publications:
+
+    @misc{leggedcontrol,
+       title = {{legged_control}:  NMPC, WBC, state estimation, and sim2real framework for legged robots based on OCS2 and ros-controls},
+       note = {[Online]. Available: \url{https://github.com/qiayuanl/legged_control}},
+       author = {Qiayuan Liao and others}
+    }
+
+    @inproceedings{liao2023walking,
+      title={Walking in narrow spaces: Safety-critical locomotion control for quadrupedal robots with duality-based optimization},
+      author={Liao, Qiayuan and Li, Zhongyu and Thirugnanam, Akshay and Zeng, Jun and Sreenath, Koushil},
+      booktitle={2023 IEEE/RSJ International Conference on Intelligent Robots and Systems (IROS)},
+      pages={2723--2730},
+      year={2023},
+      organization={IEEE}
+    }
+
 ## Introduction
 
 legged_control is an NMPC-WBC legged robot control stack and framework based
