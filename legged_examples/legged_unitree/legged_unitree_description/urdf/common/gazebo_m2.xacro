@@ -2,53 +2,53 @@
 
   <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
     <gazebo>
-          <plugin name="motor_controller" filename="libmotor_controller.so">
-            <!-- 
-            <kp0>75</kp0>
-            <kp1>30.2</kp1>
-            <kp2>18.415</kp2> -->
-            <kp0>200.2</kp0>
-            <kp1>60.2</kp1>
-            <kp2>42.415</kp2>
-            <kd0>1</kd0>
-            <kd1>1.5</kd1>
-            <kd2>0.5</kd2>
-            <!-- 
-            <kp0>80</kp0>
-            <kp1>40</kp1>
-            <kp2>20</kp2>
-            <kd0>1</kd0>
-            <kd1>1</kd1>
-            <kd2>0.5</kd2> -->
-            <!-- 
-            <kp0>200</kp0>
-            <kp1>120</kp1>
-            <kp2>60</kp2>
-            <kd0>1</kd0>
-            <kd1>1</kd1>
-            <kd2>0.5</kd2> -->
-            <!-- adding higher gains for the swing leg -->
-            <kpsw0>300</kpsw0>
-            <kpsw1>300</kpsw1>
-            <kpsw2>300</kpsw2>
-            <kdsw0>6</kdsw0>
-            <kdsw1>6</kdsw1>
-            <kdsw2>6</kdsw2>
-          </plugin>
+      <plugin name="motor_controller" filename="libmotor_controller.so">
+        <!-- 
+        <kp0>75</kp0>
+        <kp1>30.2</kp1>
+        <kp2>18.415</kp2> -->
+        <kp0>200.2</kp0>
+        <kp1>60.2</kp1>
+        <kp2>42.415</kp2>
+        <kd0>1</kd0>
+        <kd1>1.5</kd1>
+        <kd2>0.5</kd2>
+        <!-- 
+        <kp0>80</kp0>
+        <kp1>40</kp1>
+        <kp2>20</kp2>
+        <kd0>1</kd0>
+        <kd1>1</kd1>
+        <kd2>0.5</kd2> -->
+        <!-- 
+        <kp0>200</kp0>
+        <kp1>120</kp1>
+        <kp2>60</kp2>
+        <kd0>1</kd0>
+        <kd1>1</kd1>
+        <kd2>0.5</kd2> -->
+        <!-- adding higher gains for the swing leg -->
+        <kpsw0>300</kpsw0>
+        <kpsw1>300</kpsw1>
+        <kpsw2>300</kpsw2>
+        <kdsw0>6</kdsw0>
+        <kdsw1>6</kdsw1>
+        <kdsw2>6</kdsw2>
+       </plugin>
     </gazebo>
 
     <!-- IMU sensor -->
     <gazebo>
       <plugin name="imu_sensor" filename="libgazebo_ros_imu.so">
-          <alwaysOn>true</alwaysOn>
-          <bodyName>base</bodyName>
-          <frameName>base</frameName>
-          <topicName>/shvan/imu</topicName>
-          <serviceName>imu_service</serviceName>
-          <xyzOffset> 0 0 0 </xyzOffset>
-          <rpyOffset> 0 0 0 </rpyOffset>
-          <gaussianNoise>0.001</gaussianNoise>
-          <updateRate>1000.0</updateRate>
+        <alwaysOn>true</alw aysOn>
+        <bodyName>base</bodyName>
+        <frameName>base</frameName>
+        <topicName>/shvan/imu</topicName>
+        <serviceName>imu_service</serviceName>
+        <xyzOffset> 0 0 0 </xyzOffset>
+        <rpyOffset> 0 0 0 </rpyOffset>
+        <gaussianNoise>0.001</gaussianNoise>
+        <updateRate>1000.0</updateRate>
       </plugin>
   </gazebo>
 
@@ -170,7 +170,7 @@
 
     <!-- RR foot -->
     <gazebo reference="RH_FOOT">
-        <material>Gazebo/Black</material>
+      <material>Gazebo/Black</material>
       <collision>
         <surface>
           <bounce>

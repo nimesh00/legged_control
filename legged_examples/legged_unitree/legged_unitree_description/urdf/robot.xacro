@@ -7,7 +7,7 @@
     <xacro:include filename="$(find legged_unitree_description)/urdf/common/materials.xacro"/>
     <xacro:include filename="$(find legged_unitree_description)/urdf/common/leg.xacro"/>
     <xacro:include filename="$(find legged_unitree_description)/urdf/common/leg_m2.xacro"/>
-    <!-- <xacro:include filename="$(find legged_unitree_description)/urdf/common/gazebo.xacro"/> -->
+    <xacro:include filename="$(find legged_unitree_description)/urdf/common/gazebo.xacro"/>
     <xacro:include filename="$(find legged_unitree_description)/urdf/common/imu.xacro"/>
 
     <xacro:include filename="$(find legged_unitree_description)/urdf/$(arg robot_type)/const.xacro"/>
@@ -59,10 +59,10 @@
     <!-- leg xacro for m2  -->
     <xacro:if value="${'$(arg robot_type)' == 'm2'}">
 
-        <xacro:leg_m2 name="RF" mirror="1" front_hind="1"  />
-        <xacro:leg_m2 name="RH" mirror="1" front_hind="-1" />
-        <xacro:leg_m2 name="LH" mirror="-1"  front_hind="-1" />
-        <xacro:leg_m2 name="LF" mirror="-1"  front_hind="1"  />
+        <xacro:leg_m2 name="RF" mirror="1"  front_hind="1"  />
+        <xacro:leg_m2 name="RH" mirror="1"  front_hind="-1" />
+        <xacro:leg_m2 name="LH" mirror="-1" front_hind="-1" />
+        <xacro:leg_m2 name="LF" mirror="-1" front_hind="1"  />
 
     </xacro:if>
 
@@ -88,6 +88,6 @@
 
     </xacro:if>
     
-    <xacro:include filename="$(find legged_unitree_description)/urdf/common/gazebo_m2.xacro"/>
+    <!-- <xacro:include filename="$(find legged_unitree_description)/urdf/common/gazebo_m2.xacro"/> -->
 
 </robot>

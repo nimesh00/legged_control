@@ -36,6 +36,7 @@
     <material name="white">
         <color rgba="1.0 1.0 1.0 1.0"/>
     </material>
+    
     <material name="svan_black">
         <color rgba="0.0 0.0 0.0 1.0"/>
     </material>
