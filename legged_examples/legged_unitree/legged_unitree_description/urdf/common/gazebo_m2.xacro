@@ -61,7 +61,7 @@
   </gazebo>
   
   <!-- FR foot -->
-  <gazebo reference="foot_FR">
+  <gazebo reference="RF_FOOT">
         <material>Gazebo/Black</material>
       <collision>
         <surface>
@@ -97,7 +97,7 @@
     </gazebo>
 
     <!-- FL foot -->
-    <gazebo reference="foot_FL">
+    <gazebo reference="LF_FOOT">
         <material>Gazebo/Black</material>
       <collision>
         <surface>
@@ -132,8 +132,8 @@
       </collision>
     </gazebo>
 
-    <!-- FL foot -->  
-    <gazebo reference="foot_RL">
+    <!-- RL foot -->  
+    <gazebo reference="LH_FOOT">
         <material>Gazebo/Black</material>
       <collision>
         <surface>
@@ -169,7 +169,7 @@
     </gazebo>
 
     <!-- RR foot -->
-    <gazebo reference="foot_RR">
+    <gazebo reference="RH_FOOT">
         <material>Gazebo/Black</material>
       <collision>
         <surface>
@@ -209,13 +209,13 @@
       <!-- <gazebo>
           <plugin name="contact_plugin" filename="libcontact_plugin_new.so">
             <link1>foot_FR</link1>
-            <link2>foot_FL</link2>
-            <link3>foot_RL</link3>
-            <link4>foot_RR</link4>
+            <link2>FL_FOOT</link2>
+            <link3>RL_FOOT</link3>
+            <link4>RR_FOOT</link4>
             <contact_model>0</contact_model>
           </plugin>
       </gazebo> -->
-      <gazebo reference="foot_FR">
+      <gazebo reference="RF_FOOT">
         <sensor name="FR_contact_sensor" type="contact">
           <always_on>1</always_on>
           <plugin name="contact_plugin_default" filename="libcontact_plugin_default.so">
@@ -226,36 +226,36 @@
           </contact>
         </sensor>
       </gazebo>
-      <gazebo reference="foot_FL">
+      <gazebo reference="LF_FOOT">
         <sensor name="FL_contact_sensor" type="contact">
           <always_on>1</always_on>
           <plugin name="contact_plugin_default" filename="libcontact_plugin_default.so">
             <foot_link>FL</foot_link>
           </plugin>
           <contact>
-            <collision>foot_FL_collision</collision>
+            <collision>FL_FOOT_collision</collision>
           </contact>
         </sensor>
       </gazebo>
-      <gazebo reference="foot_RL">
+      <gazebo reference="LH_FOOT">
         <sensor name="RL_contact_sensor" type="contact">
           <always_on>1</always_on>
           <plugin name="contact_plugin_default" filename="libcontact_plugin_default.so">
             <foot_link>RL</foot_link>
           </plugin>
           <contact>
-            <collision>foot_RL_collision</collision>
+            <collision>RL_FOOT_collision</collision>
           </contact>
         </sensor>
       </gazebo>
-      <gazebo reference="foot_RR">
+      <gazebo reference="RH_FOOT">
         <sensor name="RR_contact_sensor" type="contact">
           <always_on>1</always_on>
           <plugin name="contact_plugin_default" filename="libcontact_plugin_default.so">
             <foot_link>RR</foot_link>
           </plugin>
           <contact>
-            <collision>foot_RR_collision</collision>
+            <collision>RR_FOOT_collision</collision>
           </contact>
         </sensor>
       </gazebo>

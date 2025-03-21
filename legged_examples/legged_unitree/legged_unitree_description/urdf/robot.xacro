@@ -59,10 +59,10 @@
     <!-- leg xacro for m2  -->
     <xacro:if value="${'$(arg robot_type)' == 'm2'}">
 
-        <xacro:leg_m2 name="FR" mirror="1" front_hind="1"  />
-        <xacro:leg_m2 name="RR" mirror="1" front_hind="-1" />
-        <xacro:leg_m2 name="RL" mirror="-1"  front_hind="-1" />
-        <xacro:leg_m2 name="FL" mirror="-1"  front_hind="1"  />
+        <xacro:leg_m2 name="RF" mirror="1" front_hind="1"  />
+        <xacro:leg_m2 name="RH" mirror="1" front_hind="-1" />
+        <xacro:leg_m2 name="LH" mirror="-1"  front_hind="-1" />
+        <xacro:leg_m2 name="LF" mirror="-1"  front_hind="1"  />
 
     </xacro:if>
 

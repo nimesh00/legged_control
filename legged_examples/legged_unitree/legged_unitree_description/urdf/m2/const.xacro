@@ -127,10 +127,10 @@
 <xacro:property name="knee_j_upper" value="4.916297857"/>
 <xacro:property name="knee_j_velocity" value ="28.6"/>
 
-<!-- foot_j -->
-<xacro:property name="foot_j_com_x" value="-0.00351"/>
-<xacro:property name="foot_j_com_y" value="0"/>
-<xacro:property name="foot_j_com_z" value="-0.1901"/>
-<xacro:property name="foot_j_axis" value="0 0 1"/>
+<!-- foot_fixed -->
+<xacro:property name="foot_fixed_com_x" value="-0.00351"/>
+<xacro:property name="foot_fixed_com_y" value="0"/>
+<xacro:property name="foot_fixed_com_z" value="-0.1901"/>
+<xacro:property name="foot_fixed_axis" value="0 0 1"/>
 
 </robot>
