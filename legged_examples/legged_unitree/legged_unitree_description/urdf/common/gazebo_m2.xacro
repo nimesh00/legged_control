@@ -40,7 +40,7 @@
     <!-- IMU sensor -->
     <gazebo>
       <plugin name="imu_sensor" filename="libgazebo_ros_imu.so">
-        <alwaysOn>true</alw aysOn>
+        <alwaysOn>true</alwaysOn>
         <bodyName>base</bodyName>
         <frameName>base</frameName>
         <topicName>/shvan/imu</topicName>
