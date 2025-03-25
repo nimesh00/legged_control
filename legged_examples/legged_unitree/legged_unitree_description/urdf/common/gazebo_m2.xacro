@@ -27,7 +27,7 @@
         <kd0>1</kd0>
         <kd1>1</kd1>
         <kd2>0.5</kd2> -->
-        <!-- adding higher gains for the swing leg -->
+        <!-- adding higher gains   for the swing leg -->
         <kpsw0>300</kpsw0>
         <kpsw1>300</kpsw1>
         <kpsw2>300</kpsw2>

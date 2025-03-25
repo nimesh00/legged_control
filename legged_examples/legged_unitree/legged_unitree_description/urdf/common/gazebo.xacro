@@ -22,5 +22,58 @@
         </plugin>
     </gazebo>
 
-
+    <!-- Foot contacts. -->
+      <!-- <gazebo>
+          <plugin name="contact_plugin" filename="libcontact_plugin_new.so">
+            <link1>foot_FR</link1>
+            <link2>FL_FOOT</link2>
+            <link3>RL_FOOT</link3>
+            <link4>RR_FOOT</link4>
+            <contact_model>0</contact_model>
+          </plugin>
+      </gazebo> -->
+      <!-- <gazebo reference="RF_FOOT">
+        <sensor name="FR_contact_sensor" type="contact">
+          <always_on>1</always_on>
+          <plugin name="contact_plugin_default" filename="libcontact_plugin_default.so">
+            <foot_link>FR</foot_link>
+          </plugin>
+          <contact>
+            <collision>foot_FR_collision</collision>
+          </contact>
+        </sensor>
+      </gazebo>
+      <gazebo reference="LF_FOOT">
+        <sensor name="FL_contact_sensor" type="contact">
+          <always_on>1</always_on>
+          <plugin name="contact_plugin_default" filename="libcontact_plugin_default.so">
+            <foot_link>FL</foot_link>
+          </plugin>
+          <contact>
+            <collision>FL_FOOT_collision</collision>
+          </contact>
+        </sensor>
+      </gazebo>
+      <gazebo reference="LH_FOOT">
+        <sensor name="RL_contact_sensor" type="contact">
+          <always_on>1</always_on>
+          <plugin name="contact_plugin_default" filename="libcontact_plugin_default.so">
+            <foot_link>RL</foot_link>
+          </plugin>
+          <contact>
+            <collision>RL_FOOT_collision</collision>
+          </contact>
+        </sensor>
+      </gazebo>
+      <gazebo reference="RH_FOOT">
+        <sensor name="RR_contact_sensor" type="contact">
+          <always_on>1</always_on>
+          <plugin name="contact_plugin_default" filename="libcontact_plugin_default.so">
+            <foot_link>RR</foot_link>
+          </plugin>
+          <contact>
+            <collision>RR_FOOT_collision</collision>
+          </contact>
+        </sensor>
+      </gazebo> -->
 </robot>

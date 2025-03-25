@@ -71,7 +71,7 @@
 
         <!-- HFE -->
         <joint name="${name}_HFE" type="revolute">
-            <origin xyz="${front_hind*hip_j_com_x} ${mirror*hip_j_com_y} ${hip_j_com_z}" rpy="0 1.57 0" />
+            <origin xyz="${front_hind*hip_j_com_x} ${mirror*hip_j_com_y} ${hip_j_com_z}" rpy="0 0 0" />
             <parent link="${name}_hip"/>
             <child link="${name}_thigh"/>
             <xacro:if value="${(mirror == 1)}">
@@ -122,9 +122,7 @@
         <!-- KFE -->
         <joint name="${name}_KFE" type="revolute">
 
-        <!-- can't set the rotation higher than this,idk why (-Mehul) -->
-
-            <origin xyz="${front_hind*knee_j_com_x} ${mirror*knee_j_com_y} ${knee_j_com_z}" rpy="0 -1.5 0" />
+            <origin xyz="${front_hind*knee_j_com_x} ${mirror*knee_j_com_y} ${knee_j_com_z}" rpy="0 0 0" />
             <parent link="${name}_thigh"/>
             <child link="${name}_calf"/>
             <xacro:if value="${(mirror == 1)}">
@@ -214,7 +212,7 @@
             <disableFixedJointLumping>true</disableFixedJointLumping>
         </gazebo>    
 
-        <!-- <gazebo reference="${name}_hip">
+        <gazebo reference="${name}_hip">
             <mu1>0.2</mu1>
             <mu2>0.2</mu2>
             <material>svan_grey</material>
@@ -228,18 +226,20 @@
             <kd value="100.0"/>
         </gazebo>
         <gazebo reference="${name}_calf">
-            <mu1>0.6</mu1>
-            <mu2>0.6</mu2>
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
             <self_collide>1</self_collide>
         </gazebo>
+
+        <!-- changing the values to 0.6 in this fricks up the model when loading. why? -->
         <gazebo reference="${name}_FOOT">
-            <mu1>0.6</mu1>
-            <mu2>0.6</mu2>
+            <mu1>0.2</mu1>
+            <mu2>0.2</mu2>
             <self_collide>1</self_collide>
             <material>Gazebo/DarkGrey</material>
             <kp value="1000000.0"/>
             <kd value="100.0"/>
-        </gazebo> -->
+        </gazebo>
         
         <xacro:leg_transmission name="${name}"/>
 
