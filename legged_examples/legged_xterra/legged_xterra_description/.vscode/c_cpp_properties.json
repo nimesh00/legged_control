@@ -1,0 +1,49 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${default}",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/home/aero/legged_control/devel/include/**",
+        "/opt/ros/noetic/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_sqp/hpipm_catkin/include/**",
+        "/home/aero/legged_control/src/hpp-fcl/include/**",
+        "/home/aero/legged_control/src/legged_control/legged_common/include/**",
+        "/home/aero/legged_control/src/legged_control/legged_controllers/include/**",
+        "/home/aero/legged_control/src/legged_control/legged_didc/include/**",
+        "/home/aero/legged_control/src/legged_control/legged_estimation/include/**",
+        "/home/aero/legged_control/src/legged_control/legged_gazebo/include/**",
+        "/home/aero/legged_control/src/legged_control/legged_examples/legged_unitree/legged_go2/include/**",
+        "/home/aero/legged_control/src/legged_control/legged_hw/include/**",
+        "/home/aero/legged_control/src/legged_control/legged_interface/include/**",
+        "/home/aero/legged_control/src/legged_control/legged_wbc/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_pinocchio/ocs2_centroidal_model/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_core/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_ddp/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_ipm/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_robotic_examples/ocs2_legged_robot/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_robotic_examples/ocs2_legged_robot_ros/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_mpc/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_oc/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_pinocchio/ocs2_pinocchio_interface/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_test_tools/ocs2_qp_solver/include/**",
+        "/home/aero/legged_control/src/ocs2_robotic_assets/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_robotic_tools/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_ros_interfaces/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_pinocchio/ocs2_self_collision/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_pinocchio/ocs2_self_collision_visualization/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_sqp/ocs2_sqp/include/**",
+        "/home/aero/legged_control/src/ocs2/ocs2_thirdparty/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++14"
+    }
+  ],
+  "version": 4
+}

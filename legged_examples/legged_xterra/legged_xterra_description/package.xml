@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>legged_xterra_description</name>
+    <version>0.0.0</version>
+    <description>xTerra robot description files</description>
+    <maintainer email="nimesh6798@gmail.com">Nimesh Khandelwal</maintainer>
+    <license>BSD</license>
+    <author email="nimesh6798@gmail.com">Nimesh Khandelwal</author>
+
+    <!-- buildtool_depend: dependencies of the build process -->
+    <buildtool_depend>catkin</buildtool_depend>
+    <exec_depend>xacro</exec_depend>
+    <exec_depend>joint_state_publisher</exec_depend>
+    <exec_depend>robot_state_publisher</exec_depend>
+
+</package>

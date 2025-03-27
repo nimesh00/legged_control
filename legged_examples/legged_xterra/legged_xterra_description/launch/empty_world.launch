@@ -1,0 +1,34 @@
+<launch>
+    <arg name="robot_type" default="$(env ROBOT_TYPE)" doc="Robot type: [m2]"/>
+    <arg name="paused" default="true" doc="Starts gazebo in paused mode" />
+    
+    <param name="legged_robot_description" command="$(find xacro)/xacro $(find legged_xterra_description)/urdf/robot.xacro
+       robot_type:=$(arg robot_type)
+    "/>
+    <node name="generate_urdf" pkg="legged_common" type="generate_urdf.sh" output="screen"
+          args="$(find legged_xterra_description)/urdf/robot.xacro $(arg robot_type)"/>
+
+    <rosparam file="$(find legged_gazebo)/config/default.yaml" command="load"/>
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find legged_gazebo)/worlds/empty_world.world"/>
+        <arg name="paused" value="$(arg paused)"/>
+    </include>
+
+    <!-- push robot_description to factory and spawn robot in gazebo -->
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" clear_params="true"
+          args="-z 0.5 -param legged_robot_description -urdf -model $(arg robot_type)
+            -J LF_HAA   0.00
+            -J LF_HFE   0.74857
+            -J LF_KFE   -1.4331
+            -J LH_HAA   0.00
+            -J LH_HFE   0.74857
+            -J LH_KFE   -1.4331
+            -J RF_HAA   0.00
+            -J RF_HFE   0.74857
+            -J RF_KFE   -1.4331
+            -J RH_HAA   0.00
+            -J RH_HFE   0.74857
+            -J RH_KFE   -1.4331
+            -unpause" respawn="false" output="screen"/>
+
+</launch>

@@ -1,0 +1,4 @@
+<launch>
+    <node name="legged_m2" pkg="legged_m2" type="legged_m2" respawn="false"
+          clear_params="true"/>
+</launch>
