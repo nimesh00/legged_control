@@ -56,7 +56,7 @@
         </link>
 
         <!-- HAA_joint -->
-        <joint name="${name}_HAA_joint" type="revolute">
+        <joint name="${name}_HAA" type="revolute">
             <origin xyz="${front_hind*abd_j_com_x} ${mirror*abd_j_com_y} ${abd_j_com_z}" rpy="0 0 0" />
             <parent link="base"/>
             <child link="${name}_hip_link"/>
@@ -106,7 +106,7 @@
         </link>
 
         <!-- HFE_joint -->
-        <joint name="${name}_HFE_joint" type="revolute">
+        <joint name="${name}_HFE" type="revolute">
             <origin xyz="${front_hind*hip_j_com_x} ${mirror*hip_j_com_y} ${hip_j_com_z}" rpy="0 0 0" />
             <parent link="${name}_hip_link"/>
             <child link="${name}_thigh_link"/>
@@ -156,7 +156,7 @@
         </link>
 
         <!-- KFE_joint -->
-        <joint name="${name}_KFE_joint" type="revolute">
+        <joint name="${name}_KFE" type="revolute">
             <origin xyz="${front_hind*knee_j_com_x} ${mirror*knee_j_com_y} ${knee_j_com_z}" rpy="0 0 0" />
             <parent link="${name}_thigh_link"/>
             <child link="${name}_shank_link"/>
