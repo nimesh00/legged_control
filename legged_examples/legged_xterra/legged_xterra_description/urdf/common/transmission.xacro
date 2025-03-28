@@ -6,7 +6,7 @@
 
         <transmission name="${name}_HAA_tran">
             <type>transmission_interface/SimpleTransmission</type>
-            <joint name="${name}_HAA">
+            <joint name="${name}_HAA_joint">
                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             </joint>
             <actuator name="${name}_HAA_motor">
@@ -17,7 +17,7 @@
 
         <transmission name="${name}_HFE_tran">
             <type>transmission_interface/SimpleTransmission</type>
-            <joint name="${name}_HFE">
+            <joint name="${name}_HFE_joint">
                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             </joint>
             <actuator name="${name}_HFE_motor">
@@ -28,7 +28,7 @@
 
         <transmission name="${name}_KFE_tran">
             <type>transmission_interface/SimpleTransmission</type>
-            <joint name="${name}_KFE">
+            <joint name="${name}_KFE_joint">
                 <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
             </joint>
             <actuator name="${name}_KFE_motor">

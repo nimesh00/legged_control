@@ -17,18 +17,18 @@
     <!-- push robot_description to factory and spawn robot in gazebo -->
     <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" clear_params="true"
           args="-z 0.5 -param legged_robot_description -urdf -model $(arg robot_type)
-            -J LF_HAA   0.00
-            -J LF_HFE   0.74857
-            -J LF_KFE   -1.4331
-            -J LH_HAA   0.00
-            -J LH_HFE   0.74857
-            -J LH_KFE   -1.4331
-            -J RF_HAA   0.00
-            -J RF_HFE   0.74857
-            -J RF_KFE   -1.4331
-            -J RH_HAA   0.00
-            -J RH_HFE   0.74857
-            -J RH_KFE   -1.4331
-            -unpause" respawn="false" output="screen"/>
+            -J FL_HAA_joint   0.00
+            -J FL_HFE_joint   0.74857
+            -J FL_KFE_joint   -1.4331
+            -J RL_HAA_joint   0.00
+            -J RL_HFE_joint   0.74857
+            -J RL_KFE_joint   -1.4331
+            -J FR_HAA_joint   0.00
+            -J FR_HFE_joint   0.74857
+            -J FR_KFE_joint   -1.4331
+            -J RR_HAA_joint   0.00
+            -J RR_HFE_joint   0.74857
+            -J RR_KFE_joint   -1.4331
+            " respawn="false" output="screen"/>
 
 </launch>
