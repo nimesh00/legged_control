@@ -24,24 +24,36 @@
         <collision>
             <origin rpy="0 0 0" xyz="0 0 0"/>
             <geometry>
-                <mesh filename="${mesh_path}/torso.STL" scale="1 1 1"/>
+                <box size="${trunk_length} ${trunk_width} ${trunk_height}"/>
+                <!-- <mesh filename="${mesh_path}/torso.STL" scale="1 1 1"/> -->
             </geometry>
         </collision>
         <inertial>
-            <origin rpy="0 0 0" xyz="${base_com_x} ${base_com_y} ${base_com_z}"/>
-            <mass value="${base_mass}"/>
+            <origin rpy="0 0 0" xyz="${trunk_com_x} ${trunk_com_y} ${trunk_com_z}"/>
+            <mass value="${trunk_mass}"/>
             <inertia
-                    ixx="${base_ixx}" ixy="${base_ixy}" ixz="${base_ixz}"
-                    iyy="${base_iyy}" iyz="${base_iyz}"
-                    izz="${base_izz}"/>
+                    ixx="${trunk_ixx}" ixy="${trunk_ixy}" ixz="${trunk_ixz}"
+                    iyy="${trunk_iyy}" iyz="${trunk_iyz}"
+                    izz="${trunk_izz}"/>
         </inertial>
     </link>
 
     <xacro:IMU connected_to="base" imu_name="base_imu" xyz="0. 0. 0." rpy="0. 0. 0."/>
 
-    <xacro:leg name="RF" mirror="1" front_hind="1"  />
-    <xacro:leg name="LF" mirror="-1"  front_hind="1"  />
-    <xacro:leg name="RH" mirror="1" front_hind="-1" />
-    <xacro:leg name="LH" mirror="-1"  front_hind="-1" />
+    <xacro:leg prefix="RF" name="FR" mesh_path="${mesh_path}" mirror="-1" front_hind="1">
+        <origin rpy="0 0 0" xyz="${leg_offset_x} ${-leg_offset_y} 0"/>
+    </xacro:leg>
+
+    <xacro:leg prefix="LF" name="FL" mesh_path="${mesh_path}" mirror="1"  front_hind="1">
+        <origin rpy="0 0 0" xyz="${leg_offset_x} ${leg_offset_y} 0"/>
+    </xacro:leg>
+
+    <xacro:leg prefix="RH" name="RR" mesh_path="${mesh_path}" mirror="-1" front_hind="-1">
+        <origin rpy="0 0 0" xyz="${-leg_offset_x} ${-leg_offset_y} 0"/>
+    </xacro:leg>
+    
+    <xacro:leg prefix="LH" name="RL" mesh_path="${mesh_path}" mirror="1"  front_hind="-1">
+        <origin rpy="0 0 0" xyz="${-leg_offset_x} ${leg_offset_y} 0"/>
+    </xacro:leg>
 
 </robot>
