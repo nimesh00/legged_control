@@ -48,8 +48,8 @@
     <xacro:property name="hip_offset_z" value="0.0"/>
    
 
-    <xacro:property name="thigh_offset_x" value="0.081"/>
-    <xacro:property name="thigh_offset_y" value="0.08"/>
+    <xacro:property name="thigh_offset_x" value="0.044"/>
+    <xacro:property name="thigh_offset_y" value="0.081"/>
     <xacro:property name="thigh_offset_z" value="0.0"/>
 
 
