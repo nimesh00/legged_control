@@ -33,7 +33,7 @@
                 </geometry>
             </collision>
             <inertial>
-                <origin rpy="0 0 0" xyz="${hip_com_x*front_hind} ${hip_com_y*mirror} ${hip_com_z}"/>
+                <origin rpy="0 0 0" xyz="${hip_com_x*front_hind} ${hip_com_y*mirror*-1} ${hip_com_z}"/>
                 <mass value="${hip_mass}"/>
                 <inertia
                         ixx="${hip_ixx}" ixy="${hip_ixy*mirror*front_hind}" ixz="${hip_ixz*front_hind}"

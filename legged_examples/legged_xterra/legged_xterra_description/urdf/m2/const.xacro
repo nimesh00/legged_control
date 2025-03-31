@@ -88,28 +88,28 @@
     <xacro:property name="trunk_izz" value="0.06413613"/>
 
     <!-- hip (left front) -->
-    <xacro:property name="hip_mass" value="0.15396568"/>
-    <xacro:property name="hip_com_x" value="0.00000000"/>
-    <xacro:property name="hip_com_y" value="-0.00262472"/>
-    <xacro:property name="hip_com_z" value="-0.06933846"/>
-    <xacro:property name="hip_ixx" value="0.00075104"/>
-    <xacro:property name="hip_ixy" value="0.00000000"/>
-    <xacro:property name="hip_ixz" value="0.00000000"/>
-    <xacro:property name="hip_iyy" value="0.00076325"/>
-    <xacro:property name="hip_iyz" value="-0.00002968"/>
-    <xacro:property name="hip_izz" value="0.00004729"/>
+    <xacro:property name="thigh_mass" value="0.15396568"/>
+    <xacro:property name="thigh_com_x" value="0.00000000"/>
+    <xacro:property name="thigh_com_y" value="-0.00262472"/>
+    <xacro:property name="thigh_com_z" value="-0.06933846"/>
+    <xacro:property name="thigh_ixx" value="0.00075104"/>
+    <xacro:property name="thigh_ixy" value="0.00000000"/>
+    <xacro:property name="thigh_ixz" value="0.00000000"/>
+    <xacro:property name="thigh_iyy" value="0.00076325"/>
+    <xacro:property name="thigh_iyz" value="-0.00002968"/>
+    <xacro:property name="thigh_izz" value="0.00004729"/>
 
     <!-- thigh -->
-    <xacro:property name="thigh_mass" value="1.12704463"/>
-    <xacro:property name="thigh_com_x" value="0.04244851"/>
-    <xacro:property name="thigh_com_y" value="-0.07733848"/>
-    <xacro:property name="thigh_com_z" value="0.00084768"/>
-    <xacro:property name="thigh_ixx" value="0.0026019"/>
-    <xacro:property name="thigh_ixy" value="0.0001226"/>
-    <xacro:property name="thigh_ixz" value="0.0000075"/>
-    <xacro:property name="thigh_iyy" value="0.0009202"/>
-    <xacro:property name="thigh_iyz" value="-0.0000024"/>
-    <xacro:property name="thigh_izz" value="0.0026365"/>
+    <xacro:property name="hip_mass" value="1.12704463"/>
+    <xacro:property name="hip_com_x" value="0.04244851"/>
+    <xacro:property name="hip_com_y" value="-0.07733848"/>
+    <xacro:property name="hip_com_z" value="0.00084768"/>
+    <xacro:property name="hip_ixx" value="0.0026019"/>
+    <xacro:property name="hip_ixy" value="0.0001226"/>
+    <xacro:property name="hip_ixz" value="0.0000075"/>
+    <xacro:property name="hip_iyy" value="0.0009202"/>
+    <xacro:property name="hip_iyz" value="-0.0000024"/>
+    <xacro:property name="hip_izz" value="0.0026365"/>
 
     <!-- calf -->
     <xacro:property name="calf_mass" value="0.1244820"/>
