@@ -29,6 +29,6 @@
             -J RH_HAA   0.00
             -J RH_HFE   0.74857
             -J RH_KFE   -1.4331
-            " respawn="false" output="screen"/>
+            -unpause" respawn="false" output="screen"/>
 
 </launch>
