@@ -84,7 +84,7 @@
     <xacro:property name="trunk_ixy" value="0.00012166"/>
     <xacro:property name="trunk_ixz" value="0.0014849"/>
     <xacro:property name="trunk_iyy" value="0.098077"/>
-    <xacro:property name="trunk_iyz" value="-3.12E-05"/>
+    <xacro:property name="trunk_iyz" value="-0.0000312"/>
     <xacro:property name="trunk_izz" value="0.107"/>
 
     <!-- hip (left front) -->
@@ -93,10 +93,10 @@
     <xacro:property name="hip_com_y" value="0.00194"/>
     <xacro:property name="hip_com_z" value="-0.000105"/>
     <xacro:property name="hip_ixx" value="0.00048"/>
-    <xacro:property name="hip_ixy" value="-3.01E-06"/>
-    <xacro:property name="hip_ixz" value="1.11E-06"/>
+    <xacro:property name="hip_ixy" value="-0.00000301"/>
+    <xacro:property name="hip_ixz" value="0.00000111"/>
     <xacro:property name="hip_iyy" value="0.000884"/>
-    <xacro:property name="hip_iyz" value="-1.42E-06"/>
+    <xacro:property name="hip_iyz" value="-0.00000142"/>
     <xacro:property name="hip_izz" value="0.000596"/>
 
     <!-- thigh -->
@@ -105,7 +105,7 @@
     <xacro:property name="thigh_com_y" value="-0.0223"/>
     <xacro:property name="thigh_com_z" value="-0.0327"/>
     <xacro:property name="thigh_ixx" value="0.00584"/>
-    <xacro:property name="thigh_ixy" value="8.72E-05"/>
+    <xacro:property name="thigh_ixy" value="0.0000872"/>
     <xacro:property name="thigh_ixz" value="-0.000289"/>
     <xacro:property name="thigh_iyy" value="0.0058"/>
     <xacro:property name="thigh_iyz" value="0.000808"/>
@@ -117,11 +117,11 @@
     <xacro:property name="calf_com_y" value="-0.000975"/>
     <xacro:property name="calf_com_z" value="-0.115"/>
     <xacro:property name="calf_ixx" value="0.00108"/>
-    <xacro:property name="calf_ixy" value="3.4E-07"/>
-    <xacro:property name="calf_ixz" value="1.72E-05"/>
+    <xacro:property name="calf_ixy" value="0.00000034"/>
+    <xacro:property name="calf_ixz" value="0.0000172"/>
     <xacro:property name="calf_iyy" value="0.0011"/>
-    <xacro:property name="calf_iyz" value="8.28E-06"/>
-    <xacro:property name="calf_izz" value="3.29E-05"/>
+    <xacro:property name="calf_iyz" value="0.00000828"/>
+    <xacro:property name="calf_izz" value="0.0000329"/>
 
 
     <!-- foot -->
