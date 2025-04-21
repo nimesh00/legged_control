@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(catkin REQUIRED
         COMPONENTS
         roscpp
-        legged_hw
+        legged_unitree_hw
 )
 set(CycloneDDS_DIR "/home/rstaion/projects/nimesh/cyclonedds/install/lib/cmake/CycloneDDS")
 set(CycloneDDS-CXX_DIR "/home/rstaion/projects/nimesh/cyclonedds-cxx/install/lib/cmake/CycloneDDS-CXX")
@@ -20,7 +20,7 @@ catkin_package(
         include
         CATKIN_DEPENDS
         roscpp
-        legged_hw
+        legged_unitree_hw
 )
 
 ###########
@@ -32,13 +32,18 @@ include_directories(
         ${catkin_INCLUDE_DIRS}
 )
 
-link_directories(lib)
+link_directories(
+        lib
+        ${CMAKE_CURRENT_SOURCE_DIR}/../legged_unitree_hw/lib
+        )
 
 idlcxx_generate(TARGET unitree_go2_msgs
         FILES
         include/dds/msgs/LowCmd.idl
         include/dds/msgs/LowState.idl
         include/dds/msgs/Go2pyLowCmd.idl
+        include/dds/msgs/JointData.idl
+        include/dds/msgs/SensorData.idl
         WARNINGS no-implicit-extensibility
 )
 

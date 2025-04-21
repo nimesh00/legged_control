@@ -21,6 +21,8 @@ bool UnitreeDDS::init(ros::NodeHandle& root_nh, ros::NodeHandle& robot_hw_nh) {
   low_cmd_dds_pub_.reset(new DDSPublisher<LowCmd_>("rt/lowcmd"));
   go2py_low_cmd_dds_pub_.reset(new DDSPublisher<Go2pyLowCmd_>("rt/go2py/low_cmd"));
   low_state_dds_sub_.reset(new DDSSubscriber<LowState_>("rt/lowstate"));
+  sensor_dds_sub_.reset(new DDSSubscriber<xterra::msg::dds_::SensorData_>("rt/go2/sim/sensor_data"));
+  joint_dds_pub_.reset(new DDSPublisher<xterra::msg::dds_::JointData_>("rt/go2/sim/joint_command"));
 
   std::string robot_type;
   root_nh.getParam("robot_type", robot_type);

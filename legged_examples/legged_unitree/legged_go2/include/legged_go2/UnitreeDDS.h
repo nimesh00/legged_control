@@ -13,6 +13,8 @@
 #include "LowCmd.hpp"
 #include "LowState.hpp"
 #include "Go2pyLowCmd.hpp"
+#include "SensorData.hpp"
+#include "JointData.hpp"
 
 #include "unitree_legged_sdk_3_8_0/safety.h"
 
@@ -99,10 +101,15 @@ class UnitreeDDS : public LeggedHW {
   std::unique_ptr<DDSPublisher<LowCmd_>> low_cmd_dds_pub_ = NULL;
   std::unique_ptr<DDSPublisher<Go2pyLowCmd_>> go2py_low_cmd_dds_pub_ = NULL;
   std::unique_ptr<DDSSubscriber<LowState_>> low_state_dds_sub_ = NULL;
+  std::unique_ptr<DDSPublisher<xterra::msg::dds_::JointData_>> joint_dds_pub_ = NULL;
+  std::unique_ptr<DDSSubscriber<xterra::msg::dds_::SensorData_>> sensor_dds_sub_ = NULL;
+
 
   LowState_ lowState_dds;
   LowCmd_ lowCmd_dds;
   Go2pyLowCmd_ go2pyLowCmd_dds;
+  xterra::msg::dds_::JointData_ jointData_dds;
+  xterra::msg::dds_::SensorData_ sensorData_dds;
 };
 
 }  // namespace legged
