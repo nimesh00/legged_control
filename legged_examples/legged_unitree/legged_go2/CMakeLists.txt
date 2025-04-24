@@ -44,6 +44,8 @@ idlcxx_generate(TARGET unitree_go2_msgs
         include/dds/msgs/Go2pyLowCmd.idl
         include/dds/msgs/JointData.idl
         include/dds/msgs/SensorData.idl
+        include/dds/msgs/QuadLog.idl
+        include/dds/msgs/Point3D.idl
         WARNINGS no-implicit-extensibility
 )
 

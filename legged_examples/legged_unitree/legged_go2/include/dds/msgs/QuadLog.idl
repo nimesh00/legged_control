@@ -1,0 +1,31 @@
+#include "Point3D.idl"
+
+module xterra {
+    module msg {
+        module dds_{
+            struct Quaterinon_ {
+                float x;
+                float y;
+                float z;
+                float w;
+            };
+            struct QuadLog_ {
+                float contact_state[4];
+                float contact_prob[4];
+                float contact_force[12];
+                Point3D_ base_position;
+                Quaterinon_ base_orientation;
+                Point3D_ linear_velocity;
+                Point3D_ angular_velocity;
+                Point3D_ plane_normal;
+                float base_wrench[6];
+                float joint_position[12];
+                float joint_velocity[12];
+                float joint_torque[12];
+                float foot_position[12];
+                float foot_velocity[12];
+            };
+        };
+    };
+};
+

@@ -21,23 +21,18 @@ bool UnitreeDDS::init(ros::NodeHandle& root_nh, ros::NodeHandle& robot_hw_nh) {
   low_cmd_dds_pub_.reset(new DDSPublisher<LowCmd_>("rt/lowcmd"));
   go2py_low_cmd_dds_pub_.reset(new DDSPublisher<Go2pyLowCmd_>("rt/go2py/low_cmd"));
   low_state_dds_sub_.reset(new DDSSubscriber<LowState_>("rt/lowstate"));
-  sensor_dds_sub_.reset(new DDSSubscriber<xterra::msg::dds_::SensorData_>("rt/go2/sim/sensor_data"));
-  joint_dds_pub_.reset(new DDSPublisher<xterra::msg::dds_::JointData_>("rt/go2/sim/joint_command"));
+  sensor_dds_sub_.reset(new DDSSubscriber<SensorData_>("rt/go2/sim/sensor_data"));
+  joint_dds_pub_.reset(new DDSPublisher<JointData_>("rt/go2/sim/joint_command"));
+  gt_dds_sub_.reset(new DDSSubscriber<QuadLog_>("rt/go2/sim/gt_data"));  
 
   std::string robot_type;
   root_nh.getParam("robot_type", robot_type);
-// #ifdef UNITREE_SDK_3_3_1
-//   if (robot_type == "a1") {
-//     safety_ = std::make_shared<UNITREE_LEGGED_SDK::Safety>(UNITREE_LEGGED_SDK::LeggedType::A1);
-//   } else if (robot_type == "aliengo") {
-//     safety_ = std::make_shared<UNITREE_LEGGED_SDK::Safety>(UNITREE_LEGGED_SDK::LeggedType::Aliengo);
-//   }
-// #elif UNITREE_SDK_3_8_0
+
   if (robot_type == "go2") {
     // Force go2 safety routine on go2 commands for basic sanitization (hopefully)
     safety_ = std::make_shared<UNITREE_LEGGED_SDK::Safety>(UNITREE_LEGGED_SDK::LeggedType::Go1);
   }
-// #endif
+
   else {
     ROS_FATAL("Unknown robot type: %s", robot_type.c_str());
     return false;
@@ -48,55 +43,30 @@ bool UnitreeDDS::init(ros::NodeHandle& root_nh, ros::NodeHandle& robot_hw_nh) {
   return true;
 }
 
-void UnitreeDDS::copyLowStateFromDDS() {
-    for (int i = 0; i < 12; ++i) {
-        lowState_.motorState[i].q = lowState_dds.motor_state()[i].q();
-        lowState_.motorState[i].dq = lowState_dds.motor_state()[i].dq();
-        lowState_.motorState[i].tauEst = lowState_dds.motor_state()[i].tau_est();
-    }
-
-    for (int i = 0; i < 4; ++i) {
-        lowState_.footForce[i] = lowState_dds.foot_force()[i];
-    }
-
-    for (int i = 0; i < 4; ++i) {
-        lowState_.imu.quaternion[i] = lowState_dds.imu_state().quaternion()[i];
-    }
-
-    for (int i = 0; i < 3; ++i) {
-        lowState_.imu.gyroscope[i] = lowState_dds.imu_state().gyroscope()[i];
-        lowState_.imu.accelerometer[i] = lowState_dds.imu_state().accelerometer()[i];
-    }
-
-    for (int i = 0; i < 40; ++i) {
-        lowState_.wirelessRemote[i] = lowState_dds.wireless_remote()[i];
-    }
-}
 
 void UnitreeDDS::read(const ros::Time& time, const ros::Duration& /*period*/) {
-  lowState_dds = low_state_dds_sub_ -> getLatestMessage();
-
-  copyLowStateFromDDS();
+  sensorData_dds = sensor_dds_sub_ -> getLatestMessage();
+  gtData_dds = gt_dds_sub_ -> getLatestMessage();
 
   for (int i = 0; i < 12; ++i) {
-    jointData_[i].pos_ = lowState_.motorState[i].q;
-    jointData_[i].vel_ = lowState_.motorState[i].dq;
-    jointData_[i].tau_ = lowState_.motorState[i].tauEst;
+    jointData_[i].pos_ = sensorData_dds.q()[i];     // Access the array directly
+    jointData_[i].vel_ = sensorData_dds.dq()[i];    // Access the array directly
+    jointData_[i].tau_ = sensorData_dds.tau_est()[i]; // Access the array directly
   }
 
-  imuData_.ori_[0] = lowState_.imu.quaternion[1];
-  imuData_.ori_[1] = lowState_.imu.quaternion[2];
-  imuData_.ori_[2] = lowState_.imu.quaternion[3];
-  imuData_.ori_[3] = lowState_.imu.quaternion[0];
-  imuData_.angularVel_[0] = lowState_.imu.gyroscope[0];
-  imuData_.angularVel_[1] = lowState_.imu.gyroscope[1];
-  imuData_.angularVel_[2] = lowState_.imu.gyroscope[2];
-  imuData_.linearAcc_[0] = lowState_.imu.accelerometer[0];
-  imuData_.linearAcc_[1] = lowState_.imu.accelerometer[1];
-  imuData_.linearAcc_[2] = lowState_.imu.accelerometer[2];
+  imuData_.ori_[0] = sensorData_dds.quat()[1];
+  imuData_.ori_[1] = sensorData_dds.quat()[2];
+  imuData_.ori_[2] = sensorData_dds.quat()[3];
+  imuData_.ori_[3] = sensorData_dds.quat()[0];
+  imuData_.angularVel_[0] = sensorData_dds.gyro()[0];
+  imuData_.angularVel_[1] = sensorData_dds.gyro()[1];
+  imuData_.angularVel_[2] = sensorData_dds.gyro()[2];
+  imuData_.linearAcc_[1] = sensorData_dds.accel()[1];
+  imuData_.linearAcc_[0] = sensorData_dds.accel()[0];
+  imuData_.linearAcc_[2] = sensorData_dds.accel()[2];
 
   for (size_t i = 0; i < CONTACT_SENSOR_NAMES.size(); ++i) {
-    contactState_[i] = lowState_.footForce[i] > contactThreshold_;
+    contactState_[i] = gtData_dds.contact_force()[i] > contactThreshold_;
   }
 
   // Set feedforward and velocity cmd to zero to avoid for safety when not controller setCommand
@@ -112,22 +82,15 @@ void UnitreeDDS::read(const ros::Time& time, const ros::Duration& /*period*/) {
   updateContact(time);
 }
 
-void UnitreeDDS::writeLowCmdToDDS() {
+void UnitreeDDS::writejointdataToDDS() {
     for (int i = 0; i < 12; ++i) {
-        lowCmd_dds.motor_cmd()[i].q() = lowCmd_.motorCmd[i].q;
-        lowCmd_dds.motor_cmd()[i].dq() = lowCmd_.motorCmd[i].dq;
-        lowCmd_dds.motor_cmd()[i].tau() = lowCmd_.motorCmd[i].tau;
-        lowCmd_dds.motor_cmd()[i].kp() = lowCmd_.motorCmd[i].Kp;
-        lowCmd_dds.motor_cmd()[i].kd() = lowCmd_.motorCmd[i].Kd;
+      jointData_dds.q()[i]= lowCmd_.motorCmd[i].q;
+      jointData_dds.dq()[i]= lowCmd_.motorCmd[i].dq;
+      jointData_dds.tau()[i] = lowCmd_.motorCmd[i].tau;
+      jointData_dds.kp()[i]= lowCmd_.motorCmd[i].Kp;
+      jointData_dds.kd()[i]= lowCmd_.motorCmd[i].Kd;
     }
 
-    for (int i = 0; i < 12; ++i) {
-        go2pyLowCmd_dds.q()[i] = lowCmd_.motorCmd[i].q;
-        go2pyLowCmd_dds.dq()[i] = lowCmd_.motorCmd[i].dq;
-        go2pyLowCmd_dds.tau()[i] = lowCmd_.motorCmd[i].tau;
-        go2pyLowCmd_dds.kp()[i] = lowCmd_.motorCmd[i].Kp;
-        go2pyLowCmd_dds.kd()[i] = lowCmd_.motorCmd[i].Kd;
-    }
 }
 
 void UnitreeDDS::write(const ros::Time& /*time*/, const ros::Duration& /*period*/) {
@@ -139,12 +102,12 @@ void UnitreeDDS::write(const ros::Time& /*time*/, const ros::Duration& /*period*
     lowCmd_.motorCmd[i].tau = static_cast<float>(jointData_[i].ff_);
   }
   safety_->PositionLimit(lowCmd_);
-  safety_->PowerProtect(lowCmd_, lowState_, powerLimit_);
+  // safety_->PowerProtect(lowCmd_, lowState_, powerLimit_);
 
-    writeLowCmdToDDS();
+    writejointdataToDDS();
 
     // low_cmd_dds_pub_ -> publish(lowCmd_dds);
-    go2py_low_cmd_dds_pub_ -> publish(go2pyLowCmd_dds);
+    joint_dds_pub_ -> publish(jointData_dds);
 }
 
 bool UnitreeDDS::setupJoints() {
@@ -239,9 +202,80 @@ void UnitreeDDS::updateContact(const ros::Time& time) {
 
   std_msgs::Int16MultiArray contactMsg;
   for (size_t i = 0; i < CONTACT_SENSOR_NAMES.size(); ++i) {
-    contactMsg.data.push_back(lowState_.footForce[i]);
+    contactMsg.data.push_back(gtData_dds.contact_force()[i]);
   }
   contactPublisher_.publish(contactMsg);
 }
 
 }  // namespace legged
+// void UnitreeDDS::copyLowStateFromDDS() {
+//     for (int i = 0; i < 12; ++i) {
+//         lowState_.motorState[i].q = lowState_dds.motor_state()[i].q();
+//         lowState_.motorState[i].dq = lowState_dds.motor_state()[i].dq();
+//         lowState_.motorState[i].tauEst = lowState_dds.motor_state()[i].tau_est();
+//     }
+
+//     for (int i = 0; i < 4; ++i) {
+//         lowState_.footForce[i] = lowState_dds.foot_force()[i];
+//     }
+
+//     for (int i = 0; i < 4; ++i) {
+//         lowState_.imu.quaternion[i] = lowState_dds.imu_state().quaternion()[i];
+//     }
+
+//     for (int i = 0; i < 3; ++i) {
+//         lowState_.imu.gyroscope[i] = lowState_dds.imu_state().gyroscope()[i];
+//         lowState_.imu.accelerometer[i] = lowState_dds.imu_state().accelerometer()[i];
+//     }
+
+//     for (int i = 0; i < 40; ++i) {
+//         lowState_.wirelessRemote[i] = lowState_dds.wireless_remote()[i];
+//     }
+// }
+
+// void UnitreeDDS::read(const ros::Time& time, const ros::Duration& /*period*/) {
+//   lowState_dds = low_state_dds_sub_ -> getLatestMessage();
+
+//   copyLowStateFromDDS();
+
+//   for (int i = 0; i < 12; ++i) {
+//     jointData_[i].pos_ = lowState_.motorState[i].q;
+//     jointData_[i].vel_ = lowState_.motorState[i].dq;
+//     jointData_[i].tau_ = lowState_.motorState[i].tauEst;
+//   }
+
+//   imuData_.ori_[0] = lowState_.imu.quaternion[1];
+//   imuData_.ori_[1] = lowState_.imu.quaternion[2];
+//   imuData_.ori_[2] = lowState_.imu.quaternion[3];
+//   imuData_.ori_[3] = lowState_.imu.quaternion[0];
+//   imuData_.angularVel_[0] = lowState_.imu.gyroscope[0];
+//   imuData_.angularVel_[1] = lowState_.imu.gyroscope[1];
+//   imuData_.angularVel_[2] = lowState_.imu.gyroscope[2];
+//   imuData_.linearAcc_[0] = lowState_.imu.accelerometer[0];
+//   imuData_.linearAcc_[1] = lowState_.imu.accelerometer[1];
+//   imuData_.linearAcc_[2] = lowState_.imu.accelerometer[2];
+
+//   for (size_t i = 0; i < CONTACT_SENSOR_NAMES.size(); ++i) {
+//     contactState_[i] = lowState_.footForce[i] > contactThreshold_;
+//   }
+
+//   // Set feedforward and velocity cmd to zero to avoid for safety when not controller setCommand
+//   std::vector<std::string> names = hybridJointInterface_.getNames();
+//   for (const auto& name : names) {
+//     HybridJointHandle handle = hybridJointInterface_.getHandle(name);
+//     handle.setFeedforward(0.);
+//     handle.setVelocityDesired(0.);
+//     handle.setKd(3.);
+//   }
+
+//   updateJoystick(time);
+//   updateContact(time);
+// }
+
+// #ifdef UNITREE_SDK_3_3_1
+//   if (robot_type == "a1") {
+//     safety_ = std::make_shared<UNITREE_LEGGED_SDK::Safety>(UNITREE_LEGGED_SDK::LeggedType::A1);
+//   } else if (robot_type == "aliengo") {
+//     safety_ = std::make_shared<UNITREE_LEGGED_SDK::Safety>(UNITREE_LEGGED_SDK::LeggedType::Aliengo);
+//   }
+// #elif UNITREE_SDK_3_8_0

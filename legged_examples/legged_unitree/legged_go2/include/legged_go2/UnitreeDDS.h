@@ -15,12 +15,14 @@
 #include "Go2pyLowCmd.hpp"
 #include "SensorData.hpp"
 #include "JointData.hpp"
+#include "QuadLog.hpp"
 
 #include "unitree_legged_sdk_3_8_0/safety.h"
 
 using namespace org::eclipse::cyclonedds;
 using namespace unitree_go::msg::dds_;
 using namespace go2py_messages::msg::dds_;
+using namespace xterra::msg::dds_;
 
 namespace legged {
 const std::vector<std::string> CONTACT_SENSOR_NAMES = {"RF_FOOT", "LF_FOOT", "RH_FOOT", "LH_FOOT"};
@@ -71,7 +73,7 @@ class UnitreeDDS : public LeggedHW {
    */
   void write(const ros::Time& time, const ros::Duration& period) override;
   void writeLowCmdToDDS();
-
+  void writejointdataToDDS();
   void updateJoystick(const ros::Time& time);
 
   void updateContact(const ros::Time& time);
@@ -101,15 +103,17 @@ class UnitreeDDS : public LeggedHW {
   std::unique_ptr<DDSPublisher<LowCmd_>> low_cmd_dds_pub_ = NULL;
   std::unique_ptr<DDSPublisher<Go2pyLowCmd_>> go2py_low_cmd_dds_pub_ = NULL;
   std::unique_ptr<DDSSubscriber<LowState_>> low_state_dds_sub_ = NULL;
-  std::unique_ptr<DDSPublisher<xterra::msg::dds_::JointData_>> joint_dds_pub_ = NULL;
-  std::unique_ptr<DDSSubscriber<xterra::msg::dds_::SensorData_>> sensor_dds_sub_ = NULL;
+  std::unique_ptr<DDSPublisher<JointData_>> joint_dds_pub_ = NULL;
+  std::unique_ptr<DDSSubscriber<SensorData_>> sensor_dds_sub_ = NULL;
+  std::unique_ptr<DDSSubscriber<QuadLog_>> gt_dds_sub_ = NULL;
 
 
   LowState_ lowState_dds;
   LowCmd_ lowCmd_dds;
   Go2pyLowCmd_ go2pyLowCmd_dds;
-  xterra::msg::dds_::JointData_ jointData_dds;
-  xterra::msg::dds_::SensorData_ sensorData_dds;
+  JointData_ jointData_dds;
+  SensorData_ sensorData_dds;
+  QuadLog_ gtData_dds;
 };
 
 }  // namespace legged
