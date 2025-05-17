@@ -20,6 +20,8 @@
 #include <angles/angles.h>
 #include <legged_estimation/FromTopiceEstimate.h>
 #include <legged_estimation/LinearKalmanFilter.h>
+#include <legged_estimation/DiscreteTimeLPF.h>
+#include <legged_estimation/ContactProbabilityFromGait.h>
 #include <legged_wbc/HierarchicalWbc.h>
 #include <legged_wbc/WeightedWbc.h>
 #include <pluginlib/class_list_macros.hpp>
@@ -48,7 +50,6 @@ bool LeggedController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
                                                              leggedInterface_->getCentroidalModelInfo(), *eeKinematicsPtr_, nh);
   selfCollisionVisualization_.reset(new LeggedSelfCollisionVisualization(leggedInterface_->getPinocchioInterface(),
                                                                          leggedInterface_->getGeometryInterface(), pinocchioMapping, nh));
-
   // Hardware interface
   auto* hybridJointInterface = robot_hw->get<HybridJointInterface>();
   std::vector<std::string> joint_names{"LF_HAA", "LF_HFE", "LF_KFE", "LH_HAA", "LH_HFE", "LH_KFE",
@@ -65,10 +66,14 @@ bool LeggedController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
   // State estimation
   setupStateEstimate(taskFile, verbose);
 
+  // Force estimation
+  setupForceEstimate();
+
+  // Contact Probability Model
+  setupContactProbability();
+
   // Whole body control
   wbc_ = std::make_shared<WeightedWbc>(leggedInterface_->getPinocchioInterface(), leggedInterface_->getCentroidalModelInfo(),
-                                       *eeKinematicsPtr_);
-  didc_ = std::make_shared<DistributedIDC>(leggedInterface_->getPinocchioInterface(), leggedInterface_->getCentroidalModelInfo(),
                                        *eeKinematicsPtr_);
   wbc_->loadTasksSetting(taskFile, verbose);
 
@@ -96,7 +101,7 @@ void LeggedController::starting(const ros::Time& time) {
     ros::WallRate(leggedInterface_->mpcSettings().mrtDesiredFrequency_).sleep();
   }
   ROS_INFO_STREAM("Initial policy has been received.");
-
+  controllerTime_ = ros::Time::now();
   mpcRunning_ = true;
 }
 
@@ -104,7 +109,10 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
   // State Estimate
   updateStateEstimation(time, period);
 
-  // Update the current state of the system
+  // estimate the contact probability
+  vector_t cPro = contactProbabilityG_->update(leggedInterface_->getSwitchedModelReferenceManagerPtr()->getModeSchedule(), time, controllerTime_, period);
+
+    // Update the current state of the system
   mpcMrtInterface_->setCurrentObservation(currentObservation_);
 
   // Load the latest MPC policy
@@ -119,12 +127,10 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
   currentObservation_.input = optimizedInput;
 
   wbcTimer_.startTimer();
-  // vector_t x = wbc_->update(optimizedState, optimizedInput, measuredRbdState_, plannedMode, period.toSec());
-  vector_t tau_ff = didc_->update(optimizedState, optimizedInput, measuredRbdState_, plannedMode, period.toSec());
+  vector_t x = wbc_->update(optimizedState, optimizedInput, measuredRbdState_, plannedMode, period.toSec());
   wbcTimer_.endTimer();
 
-  // vector_t torque = x.tail(12);
-  vector_t torque = tau_ff;
+  vector_t torque = x.tail(12);
 
   vector_t posDes = centroidal_model::getJointAngles(optimizedState, leggedInterface_->getCentroidalModelInfo());
   vector_t velDes = centroidal_model::getJointVelocities(optimizedInput, leggedInterface_->getCentroidalModelInfo());
@@ -136,13 +142,8 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
   }
 
   for (size_t j = 0; j < leggedInterface_->getCentroidalModelInfo().actuatedDofNum; ++j) {
-    hybridJointHandles_[j].setCommand(posDes(j), velDes(j), 10, 3, torque(j));
+    hybridJointHandles_[j].setCommand(posDes(j), velDes(j), 0, 3, torque(j));
   }
-  // for (size_t j = 0; j < 4; ++j) {
-  //   hybridJointHandles_[3 * j + 0].setCommand(posDes(3 * j + 0), velDes(3 * j + 0), 100, 3, torque(3 * j + 0));
-  //   hybridJointHandles_[3 * j + 1].setCommand(posDes(3 * j + 1), velDes(3 * j + 1), 120, 3, torque(3 * j + 1));
-  //   hybridJointHandles_[3 * j + 2].setCommand(posDes(3 * j + 2), velDes(3 * j + 2), 120, 3, torque(3 * j + 2));
-  // }
 
   // Visualization
   robotVisualizer_->update(currentObservation_, mpcMrtInterface_->getPolicy(), mpcMrtInterface_->getCommand());
@@ -150,10 +151,11 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
 
   // Publish the observation. Only needed for the command interface
   observationPublisher_.publish(ros_msg_conversions::createObservationMsg(currentObservation_));
+
 }
 
 void LeggedController::updateStateEstimation(const ros::Time& time, const ros::Duration& period) {
-  vector_t jointPos(hybridJointHandles_.size()), jointVel(hybridJointHandles_.size());
+  vector_t jointPos(hybridJointHandles_.size()), jointVel(hybridJointHandles_.size()), jointEffort(hybridJointHandles_.size());
   contact_flag_t contacts;
   Eigen::Quaternion<scalar_t> quat;
   contact_flag_t contactFlag;
@@ -163,6 +165,7 @@ void LeggedController::updateStateEstimation(const ros::Time& time, const ros::D
   for (size_t i = 0; i < hybridJointHandles_.size(); ++i) {
     jointPos(i) = hybridJointHandles_[i].getPosition();
     jointVel(i) = hybridJointHandles_[i].getVelocity();
+    jointEffort(i) = hybridJointHandles_[i].getEffort();
   }
   for (size_t i = 0; i < contacts.size(); ++i) {
     contactFlag[i] = contactHandles_[i].isContact();
@@ -180,15 +183,40 @@ void LeggedController::updateStateEstimation(const ros::Time& time, const ros::D
     linearAccelCovariance(i) = imuSensorHandle_.getLinearAccelerationCovariance()[i];
   }
 
-  stateEstimate_->updateJointStates(jointPos, jointVel);
+  stateEstimate_->updateJointStates(jointPos, jointVel, jointEffort);
+  // estimate the force of feet
+  forceEstimate_->updateJointStates(jointPos, jointVel, jointEffort);
+
   stateEstimate_->updateContact(contactFlag);
+  forceEstimate_->updateContact(contactFlag);
   stateEstimate_->updateImu(quat, angularVel, linearAccel, orientationCovariance, angularVelCovariance, linearAccelCovariance);
+  forceEstimate_->updateImu(quat, angularVel, linearAccel, orientationCovariance, angularVelCovariance, linearAccelCovariance);
   measuredRbdState_ = stateEstimate_->update(time, period);
+
+  vector_t forceEstimate = forceEstimate_->update(time, period);
+  vector_t kalmanTest = contactKal_->update(forceEstimate_.get(), contactProbabilityG_.get(), time, period);
+
+  dataShow_.data.clear();
+  // visualization of cfp
+//  dataShow_.data.push_back(forceEstimate_->getProFromForce()[0]);
+  dataShow_.data.push_back(forceEstimate_->getEstimateForceInDiscrete()[2]);
+  dataShow_.data.push_back(forceEstimate_->getEstimateForceInContinuous()[2]);
+//  dataShow_.data.push_back(forceEstimate_->getProFromHeight()[0]);
+//  dataShow_.data.push_back(contactProbabilityG_->getProFromGait()[0]);
+//  dataShow_.data.push_back(contactHandles_[0].isContact());
+//  for ( scalar_t i:kalmanTest ) {
+//      dataShow_.data.push_back(i);
+//      if(i < 0.6) dataShow_.data.push_back(0);
+//      else dataShow_.data.push_back(1);
+//  }
+  testPublisher_.publish(dataShow_);
+
   currentObservation_.time += period.toSec();
   scalar_t yawLast = currentObservation_.state(9);
   currentObservation_.state = rbdConversions_->computeCentroidalStateFromRbdModel(measuredRbdState_);
   currentObservation_.state(9) = yawLast + angles::shortest_angular_distance(yawLast, currentObservation_.state(9));
   currentObservation_.mode = stateEstimate_->getMode();
+
 }
 
 LeggedController::~LeggedController() {
@@ -266,10 +294,25 @@ void LeggedController::setupStateEstimate(const std::string& taskFile, bool verb
   currentObservation_.time = 0;
 }
 
+void LeggedController::setupForceEstimate() {
+    forceEstimate_ = std::make_shared<DiscreteTimeLPF>(leggedInterface_->getPinocchioInterface(),
+                                                       leggedInterface_->getCentroidalModelInfo(), *eeKinematicsPtr_);
+    ros::NodeHandle nh;
+    testPublisher_ = nh.advertise<std_msgs::Float64MultiArray>("test_topic", 10); // this test can used to vis the results that we want
+}
+
+void LeggedController::setupContactProbability() {
+    ros::NodeHandle nh;
+    const std::string robotName = "legged_robot";
+    contactProbabilityG_ = std::make_shared<ContactProbabilityFromGait>(nh, robotName);
+    contactKal_ = std::make_shared<ContactKalman>();
+}
+
 void LeggedCheaterController::setupStateEstimate(const std::string& /*taskFile*/, bool /*verbose*/) {
   stateEstimate_ = std::make_shared<FromTopicStateEstimate>(leggedInterface_->getPinocchioInterface(),
                                                             leggedInterface_->getCentroidalModelInfo(), *eeKinematicsPtr_);
 }
+
 
 }  // namespace legged
 

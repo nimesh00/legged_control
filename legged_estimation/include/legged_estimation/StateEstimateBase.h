@@ -25,7 +25,7 @@ using namespace legged_robot;
 class StateEstimateBase {
  public:
   StateEstimateBase(PinocchioInterface pinocchioInterface, CentroidalModelInfo info, const PinocchioEndEffectorKinematics& eeKinematics);
-  virtual void updateJointStates(const vector_t& jointPos, const vector_t& jointVel);
+  virtual void updateJointStates(const vector_t& jointPos, const vector_t& jointVel, const vector_t& jointEffort);
   virtual void updateContact(contact_flag_t contactFlag) { contactFlag_ = contactFlag; }
   virtual void updateImu(const Eigen::Quaternion<scalar_t>& quat, const vector3_t& angularVelLocal, const vector3_t& linearAccelLocal,
                          const matrix3_t& orientationCovariance, const matrix3_t& angularVelCovariance,
@@ -45,7 +45,7 @@ class StateEstimateBase {
   std::unique_ptr<PinocchioEndEffectorKinematics> eeKinematics_;
 
   vector3_t zyxOffset_ = vector3_t::Zero();
-  vector_t rbdState_;
+  vector_t rbdState_;  // (pos and vel) of joint + linear pos and vel and angular and w of body = 36
   contact_flag_t contactFlag_{};
   Eigen::Quaternion<scalar_t> quat_;
   vector3_t angularVelLocal_, linearAccelLocal_;
@@ -70,6 +70,16 @@ Eigen::Matrix<SCALAR_T, 3, 1> quatToZyx(const Eigen::Quaternion<SCALAR_T>& q) {
   zyx(1) = std::asin(as);
   zyx(2) = std::atan2(2 * (q.y() * q.z() + q.w() * q.x()), square(q.w()) - square(q.x()) - square(q.y()) + square(q.z()));
   return zyx;
+}
+
+template <typename T>
+bool isSameSubsequence(const std::vector<T>& seq, int start1, int start2, int length) {
+    for (int i = 0; i < length; ++i) {
+        if (seq[start1 + i] != seq[start2 + i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 }  // namespace legged

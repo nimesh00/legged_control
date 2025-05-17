@@ -19,11 +19,10 @@ StateEstimateBase::StateEstimateBase(PinocchioInterface pinocchioInterface, Cent
       rbdState_(vector_t ::Zero(2 * info_.generalizedCoordinatesNum)) {
   ros::NodeHandle nh;
   odomPub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(nh, "odom", 10));
-
   posePub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::PoseWithCovarianceStamped>(nh, "pose", 10));
 }
 
-void StateEstimateBase::updateJointStates(const vector_t& jointPos, const vector_t& jointVel) {
+void StateEstimateBase::updateJointStates(const vector_t& jointPos, const vector_t& jointVel, const vector_t& jointEffort) {
   rbdState_.segment(6, info_.actuatedDofNum) = jointPos;
   rbdState_.segment(6 + info_.generalizedCoordinatesNum, info_.actuatedDofNum) = jointVel;
 }

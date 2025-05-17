@@ -14,12 +14,15 @@
 #include <ocs2_mpc/MPC_MRT_Interface.h>
 
 #include <legged_estimation/StateEstimateBase.h>
+#include <legged_estimation/ContactProbabilityFromGait.h>
+#include <legged_estimation/ContactKalman.h>
 #include <legged_interface/LeggedInterface.h>
 #include <legged_wbc/WbcBase.h>
-#include <legged_didc/DistributedIDC.h>
 
 #include "legged_controllers/SafetyChecker.h"
 #include "legged_controllers/visualization/LeggedSelfCollisionVisualization.h"
+
+#include <std_msgs/Float64MultiArray.h>
 
 namespace legged {
 using namespace ocs2;
@@ -43,6 +46,8 @@ class LeggedController : public controller_interface::MultiInterfaceController<H
   virtual void setupMpc();
   virtual void setupMrt();
   virtual void setupStateEstimate(const std::string& taskFile, bool verbose);
+  virtual void setupForceEstimate();
+  virtual void setupContactProbability();
 
   // Interface
   std::shared_ptr<LeggedInterface> leggedInterface_;
@@ -56,10 +61,12 @@ class LeggedController : public controller_interface::MultiInterfaceController<H
   vector_t measuredRbdState_;
   std::shared_ptr<StateEstimateBase> stateEstimate_;
   std::shared_ptr<CentroidalModelRbdConversions> rbdConversions_;
+  std::shared_ptr<DiscreteTimeLPF> forceEstimate_;
+  std::shared_ptr<ContactProbabilityFromGait> contactProbabilityG_;
+  std::shared_ptr<ContactKalman> contactKal_;
 
   // Whole Body Control
   std::shared_ptr<WbcBase> wbc_;
-  std::shared_ptr<DistributedIDC> didc_;
   std::shared_ptr<SafetyChecker> safetyChecker_;
 
   // Nonlinear MPC
@@ -70,12 +77,15 @@ class LeggedController : public controller_interface::MultiInterfaceController<H
   std::shared_ptr<LeggedRobotVisualizer> robotVisualizer_;
   std::shared_ptr<LeggedSelfCollisionVisualization> selfCollisionVisualization_;
   ros::Publisher observationPublisher_;
+  ros::Publisher testPublisher_;
 
  private:
   std::thread mpcThread_;
   std::atomic_bool controllerRunning_{}, mpcRunning_{};
   benchmark::RepeatedTimer mpcTimer_;
   benchmark::RepeatedTimer wbcTimer_;
+  ros::Time controllerTime_;
+  std_msgs::Float64MultiArray dataShow_;
 };
 
 class LeggedCheaterController : public LeggedController {
