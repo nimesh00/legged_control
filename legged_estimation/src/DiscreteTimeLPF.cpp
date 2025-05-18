@@ -11,6 +11,7 @@
 
 #include <ocs2_robotic_tools/common/RotationDerivativesTransforms.h>
 #include <ocs2_robotic_tools/common/RotationTransforms.h>
+#include <random>
 
 #include <ocs2_robotic_tools/common/RotationDerivativesTransforms.h>
 #include <ocs2_robotic_tools/common/RotationTransforms.h>
@@ -66,10 +67,10 @@ vector_t DiscreteTimeLPF::update(const ros::Time &time, const ros::Duration &per
     qPino.setZero();
     qPino.segment<3>(3) = rbdState_.head<3>();  // Only set orientation, let position in origin.
 
-    // 初始化随机数生成器 -- 弄一个噪声给电机
+    // Initialize random number generator -- Add noise to the motor
     std::random_device rd;
-    std::mt19937 gen(rd()); // 以随机设备作为种子
-    // 定义高斯分布，均值为0，标准差为0.01
+    std::mt19937 gen(rd()); // Seed with a random device
+    // Define a Gaussian distribution with a mean of 0 and a standard deviation of 0.01
     std::normal_distribution<> d(0, 0.01);
     Eigen::Matrix<double, 12, 1> noise;
     noise.setOnes();

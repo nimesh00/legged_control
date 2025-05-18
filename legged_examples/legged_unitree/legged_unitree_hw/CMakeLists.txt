@@ -55,8 +55,9 @@ target_compile_definitions(${PROJECT_NAME}_3_8_0 PRIVATE UNITREE_SDK_3_8_0)
 
 target_link_libraries(${PROJECT_NAME}_3_8_0
         ${catkin_LIBRARIES}
-	# libunitree_legged_sdk_amd64_3_8_0.a
-        libunitree_legged_sdk_arm64_3_8_0.a
+	libunitree_legged_sdk_amd64_3_8_0.a
+
+        # libunitree_legged_sdk_arm64_3_8_0.a
 )
 
 idlcxx_generate(TARGET unitree_go2_msgs 
@@ -77,7 +78,8 @@ target_link_libraries(${PROJECT_NAME}_go2
         ${catkin_LIBRARIES}
         unitree_go2_msgs
         CycloneDDS-CXX::ddscxx
-        libunitree_legged_sdk_arm64_3_8_0.a
+        libunitree_legged_sdk_amd64_3_8_0.a
+        # libunitree_legged_sdk_arm64_3_8_0.a
 )
 
 #########################
@@ -99,6 +101,7 @@ endif (cmake_clang_tools_FOUND)
 #############
 ## Install ##
 #############
+
 
 # Mark executables and/or libraries for installation
 install(TARGETS 

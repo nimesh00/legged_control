@@ -60,8 +60,8 @@ target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
         unitree_go2_msgs
         CycloneDDS-CXX::ddscxx
-	# libunitree_legged_sdk_amd64_3_8_0.a
-        libunitree_legged_sdk_arm64_3_8_0.a
+	libunitree_legged_sdk_amd64_3_8_0.a
+        # libunitree_legged_sdk_arm64_3_8_0.a
 )
 
 #########################
