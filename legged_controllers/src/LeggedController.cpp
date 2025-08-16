@@ -187,7 +187,7 @@ void LeggedController::updateStateEstimation(const ros::Time& time, const ros::D
   // estimate the force of feet
   forceEstimate_->updateJointStates(jointPos, jointVel, jointEffort);
 
-  stateEstimate_->updateContact(contactFlag);
+  stateEstimate_->updateContact(contactFlag); //why? what does this do?
   forceEstimate_->updateContact(contactFlag);
   stateEstimate_->updateImu(quat, angularVel, linearAccel, orientationCovariance, angularVelCovariance, linearAccelCovariance);
   forceEstimate_->updateImu(quat, angularVel, linearAccel, orientationCovariance, angularVelCovariance, linearAccelCovariance);
@@ -195,12 +195,20 @@ void LeggedController::updateStateEstimation(const ros::Time& time, const ros::D
 
   vector_t forceEstimate = forceEstimate_->update(time, period);
   vector_t kalmanTest = contactKal_->update(forceEstimate_.get(), contactProbabilityG_.get(), time, period);
+  // FR, FL , RR, RL
 
   dataShow_.data.clear();
   // visualization of cfp
 //  dataShow_.data.push_back(forceEstimate_->getProFromForce()[0]);
-  dataShow_.data.push_back(forceEstimate_->getEstimateForceInDiscrete()[2]);
-  dataShow_.data.push_back(forceEstimate_->getEstimateForceInContinuous()[2]);
+  // dataShow_.data.push_back(forceEstimate_->getEstimateForceInDiscrete()[0]);
+  // dataShow_.data.push_back(forceEstimate_->getEstimateForceInDiscrete()[1]);
+  // dataShow_.data.push_back(forceEstimate_->getEstimateForceInDiscrete()[2]);
+  // dataShow_.data.push_back(forceEstimate_->getEstimateForceInDiscrete()[3]);
+  
+  dataShow_.data.push_back(kalmanTest[0]);
+  dataShow_.data.push_back(kalmanTest[1]);
+  dataShow_.data.push_back(kalmanTest[2]);
+  dataShow_.data.push_back(kalmanTest[3]);
 //  dataShow_.data.push_back(forceEstimate_->getProFromHeight()[0]);
 //  dataShow_.data.push_back(contactProbabilityG_->getProFromGait()[0]);
 //  dataShow_.data.push_back(contactHandles_[0].isContact());
@@ -209,7 +217,13 @@ void LeggedController::updateStateEstimation(const ros::Time& time, const ros::D
 //      if(i < 0.6) dataShow_.data.push_back(0);
 //      else dataShow_.data.push_back(1);
 //  }
-  testPublisher_.publish(dataShow_);
+  
+
+// In your update function:
+if ((ros::Time::now() - lastPublishTime_).toSec() >= 1.0) {
+    testPublisher_.publish(dataShow_);
+    lastPublishTime_ = ros::Time::now();
+}
 
   currentObservation_.time += period.toSec();
   scalar_t yawLast = currentObservation_.state(9);
@@ -298,7 +312,7 @@ void LeggedController::setupForceEstimate() {
     forceEstimate_ = std::make_shared<DiscreteTimeLPF>(leggedInterface_->getPinocchioInterface(),
                                                        leggedInterface_->getCentroidalModelInfo(), *eeKinematicsPtr_);
     ros::NodeHandle nh;
-    testPublisher_ = nh.advertise<std_msgs::Float64MultiArray>("test_topic", 10); // this test can used to vis the results that we want
+    testPublisher_ = nh.advertise<std_msgs::Float64MultiArray>("test_topic", 1); // this test can used to vis the results that we want
 }
 
 void LeggedController::setupContactProbability() {

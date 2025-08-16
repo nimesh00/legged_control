@@ -78,6 +78,7 @@ class LeggedController : public controller_interface::MultiInterfaceController<H
   std::shared_ptr<LeggedSelfCollisionVisualization> selfCollisionVisualization_;
   ros::Publisher observationPublisher_;
   ros::Publisher testPublisher_;
+  ros::Time lastPublishTime_;
 
  private:
   std::thread mpcThread_;

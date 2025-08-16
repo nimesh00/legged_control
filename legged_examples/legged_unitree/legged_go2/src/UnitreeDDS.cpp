@@ -93,7 +93,7 @@ void UnitreeDDS::read(const ros::Time& time, const ros::Duration& /*period*/) {
 void UnitreeDDS::writejointdataToDDS() {
     for (int i = 0; i < 12; ++i) {
         jointData_dds.q()[i] = lowCmd_.motorCmd[i].q;
-        jointData_dds.dq()[i] = lowCmd_.motorCmd[i].dq;
+        jointData_dds.dq()[i] = lowCmd_.motorCmd[i].dq; 
         jointData_dds.tau()[i] = lowCmd_.motorCmd[i].tau;
         jointData_dds.kp()[i] = lowCmd_.motorCmd[i].Kp;
         jointData_dds.kd()[i] = lowCmd_.motorCmd[i].Kd;
@@ -124,7 +124,7 @@ void UnitreeDDS::write(const ros::Time& /*time*/,
 
     // writejointdataToDDS();
 
-    // low_cmd_dds_pub_ -> publish(lowCmd_dds);
+    // low_cmd_dds_pub_ -> publish( );
     joint_dds_pub_->publish(jointData_dds);
 }
 
