@@ -21,6 +21,7 @@
 
 #include "legged_controllers/SafetyChecker.h"
 #include "legged_controllers/visualization/LeggedSelfCollisionVisualization.h"
+#include "legged_controllers/Instrumentor.h"
 
 #include <std_msgs/Float64MultiArray.h>
 
@@ -80,11 +81,15 @@ class LeggedController : public controller_interface::MultiInterfaceController<H
   ros::Publisher testPublisher_;
   ros::Time lastPublishTime_;
 
+
  private:
   std::thread mpcThread_;
   std::atomic_bool controllerRunning_{}, mpcRunning_{};
   benchmark::RepeatedTimer mpcTimer_;
   benchmark::RepeatedTimer wbcTimer_;
+  std::shared_ptr<Instrumentor> Benchmarker_;
+  std::shared_ptr<Instrumentor> mpcBenchmarker_;
+
   ros::Time controllerTime_;
   std_msgs::Float64MultiArray dataShow_;
 };

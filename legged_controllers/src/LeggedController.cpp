@@ -2,9 +2,11 @@
 // Created by qiayuan on 2022/6/24.
 //
 
+//TODO: flag for turning off benchmarking while building
 #include <pinocchio/fwd.hpp>  // forward declarations must be included first.
 
 #include "legged_controllers/LeggedController.h"
+#include "legged_controllers/Instrumentor.h"
 
 #include <ocs2_centroidal_model/AccessHelperFunctions.h>
 #include <ocs2_centroidal_model/CentroidalModelPinocchioMapping.h>
@@ -79,7 +81,8 @@ bool LeggedController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
 
   // Safety Checker
   safetyChecker_ = std::make_shared<SafetyChecker>(leggedInterface_->getCentroidalModelInfo());
-
+  
+  Benchmarker_ = std::make_shared<Instrumentor>();
   return true;
 }
 
@@ -103,55 +106,68 @@ void LeggedController::starting(const ros::Time& time) {
   ROS_INFO_STREAM("Initial policy has been received.");
   controllerTime_ = ros::Time::now();
   mpcRunning_ = true;
+  Benchmarker_->BeginSession("benchmarking");
+
 }
 
 void LeggedController::update(const ros::Time& time, const ros::Duration& period) {
-  // State Estimate
-  updateStateEstimation(time, period);
+  
+  InstrumentationTimer timer0("LeggedController::update", Benchmarker_);//pass by reference
+  {
 
-  // estimate the contact probability
-  vector_t cPro = contactProbabilityG_->update(leggedInterface_->getSwitchedModelReferenceManagerPtr()->getModeSchedule(), time, controllerTime_, period);
+    vector_t optimizedState, optimizedInput;
+    size_t plannedMode = 0;  // The mode that is active at the time the policy is evaluated at.
+    vector_t x;
 
-    // Update the current state of the system
-  mpcMrtInterface_->setCurrentObservation(currentObservation_);
+    {
+    InstrumentationTimer timer1("updateStateEstimation", Benchmarker_);
+      updateStateEstimation(time, period);
+    }
 
-  // Load the latest MPC policy
-  mpcMrtInterface_->updatePolicy();
+    {
+    InstrumentationTimer timer2("MPC update", Benchmarker_);
+    mpcMrtInterface_->setCurrentObservation(currentObservation_);
+    // Load the latest MPC policy
+      mpcMrtInterface_->updatePolicy();
 
-  // Evaluate the current policy
-  vector_t optimizedState, optimizedInput;
-  size_t plannedMode = 0;  // The mode that is active at the time the policy is evaluated at.
-  mpcMrtInterface_->evaluatePolicy(currentObservation_.time, currentObservation_.state, optimizedState, optimizedInput, plannedMode);
+      // Evaluate the current policy
+      mpcMrtInterface_->evaluatePolicy(currentObservation_.time, currentObservation_.state, optimizedState, optimizedInput, plannedMode);
+    }
+    {
+    InstrumentationTimer timer3("WBC update", Benchmarker_);
+    // Whole body control
+      currentObservation_.input = optimizedInput;
 
-  // Whole body control
-  currentObservation_.input = optimizedInput;
+      x = wbc_->update(optimizedState, optimizedInput, measuredRbdState_, plannedMode, period.toSec());
+    }
+    {
+    InstrumentationTimer timer4("Other overhead", Benchmarker_);
 
-  wbcTimer_.startTimer();
-  vector_t x = wbc_->update(optimizedState, optimizedInput, measuredRbdState_, plannedMode, period.toSec());
-  wbcTimer_.endTimer();
+    vector_t torque = x.tail(12);
 
-  vector_t torque = x.tail(12);
+    
 
-  vector_t posDes = centroidal_model::getJointAngles(optimizedState, leggedInterface_->getCentroidalModelInfo());
-  vector_t velDes = centroidal_model::getJointVelocities(optimizedInput, leggedInterface_->getCentroidalModelInfo());
+    vector_t posDes = centroidal_model::getJointAngles(optimizedState, leggedInterface_->getCentroidalModelInfo());
+    vector_t velDes = centroidal_model::getJointVelocities(optimizedInput, leggedInterface_->getCentroidalModelInfo());
 
-  // Safety check, if failed, stop the controller
-  if (!safetyChecker_->check(currentObservation_, optimizedState, optimizedInput)) {
-    ROS_ERROR_STREAM("[Legged Controller] Safety check failed, stopping the controller.");
-    stopRequest(time);
+    // Safety check, if failed, stop the controller
+    if (!safetyChecker_->check(currentObservation_, optimizedState, optimizedInput)) {
+      ROS_ERROR_STREAM("[Legged Controller] Safety check failed, stopping the controller.");
+      stopRequest(time);
+    }
+
+    for (size_t j = 0; j < leggedInterface_->getCentroidalModelInfo().actuatedDofNum; ++j) {
+      hybridJointHandles_[j].setCommand(posDes(j), velDes(j), 0, 3, torque(j));
+    }
+
+    // Visualization
+    robotVisualizer_->update(currentObservation_, mpcMrtInterface_->getPolicy(), mpcMrtInterface_->getCommand());
+    selfCollisionVisualization_->update(currentObservation_);
+
+    // Publish the observation. Only needed for the command interface
+    observationPublisher_.publish(ros_msg_conversions::createObservationMsg(currentObservation_));
+    }
   }
-
-  for (size_t j = 0; j < leggedInterface_->getCentroidalModelInfo().actuatedDofNum; ++j) {
-    hybridJointHandles_[j].setCommand(posDes(j), velDes(j), 0, 3, torque(j));
-  }
-
-  // Visualization
-  robotVisualizer_->update(currentObservation_, mpcMrtInterface_->getPolicy(), mpcMrtInterface_->getCommand());
-  selfCollisionVisualization_->update(currentObservation_);
-
-  // Publish the observation. Only needed for the command interface
-  observationPublisher_.publish(ros_msg_conversions::createObservationMsg(currentObservation_));
-
 }
 
 void LeggedController::updateStateEstimation(const ros::Time& time, const ros::Duration& period) {
@@ -220,7 +236,7 @@ void LeggedController::updateStateEstimation(const ros::Time& time, const ros::D
   
 
 // In your update function:
-if ((ros::Time::now() - lastPublishTime_).toSec() >= 1.0) {
+if ((ros::Time::now() - lastPublishTime_).toSec() >= 0.10) {
     testPublisher_.publish(dataShow_);
     lastPublishTime_ = ros::Time::now();
 }
@@ -246,6 +262,8 @@ LeggedController::~LeggedController() {
   std::cerr << "\n### WBC Benchmarking";
   std::cerr << "\n###   Maximum : " << wbcTimer_.getMaxIntervalInMilliseconds() << "[ms].";
   std::cerr << "\n###   Average : " << wbcTimer_.getAverageInMilliseconds() << "[ms].";
+  
+  Benchmarker_->EndSession();
 }
 
 void LeggedController::setupLeggedInterface(const std::string& taskFile, const std::string& urdfFile, const std::string& referenceFile,
@@ -285,9 +303,10 @@ void LeggedController::setupMrt() {
         executeAndSleep(
             [&]() {
               if (mpcRunning_) {
-                mpcTimer_.startTimer();
+                // mpcTimer_.startTimer();
+                // InstrumentationTimer timer5("MPC optimization", Benchmarker_);
                 mpcMrtInterface_->advanceMpc();
-                mpcTimer_.endTimer();
+                // mpcTimer_.endTimer();
               }
             },
             leggedInterface_->mpcSettings().mpcDesiredFrequency_);
@@ -312,7 +331,7 @@ void LeggedController::setupForceEstimate() {
     forceEstimate_ = std::make_shared<DiscreteTimeLPF>(leggedInterface_->getPinocchioInterface(),
                                                        leggedInterface_->getCentroidalModelInfo(), *eeKinematicsPtr_);
     ros::NodeHandle nh;
-    testPublisher_ = nh.advertise<std_msgs::Float64MultiArray>("test_topic", 1); // this test can used to vis the results that we want
+    testPublisher_ = nh.advertise<std_msgs::Float64MultiArray>("test_topic", 10); // this test can used to vis the results that we want
 }
 
 void LeggedController::setupContactProbability() {
