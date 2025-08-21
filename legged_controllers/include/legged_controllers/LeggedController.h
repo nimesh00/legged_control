@@ -88,8 +88,6 @@ class LeggedController : public controller_interface::MultiInterfaceController<H
   benchmark::RepeatedTimer mpcTimer_;
   benchmark::RepeatedTimer wbcTimer_;
   std::shared_ptr<Instrumentor> Benchmarker_;
-  std::shared_ptr<Instrumentor> mpcBenchmarker_;
-
   ros::Time controllerTime_;
   std_msgs::Float64MultiArray dataShow_;
 };

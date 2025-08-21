@@ -19,7 +19,7 @@
 #include <algorithm>
 #include <fstream>
 #include <thread>
-
+#include <mutex> // <<< ADD THIS INCLUDE
 
 struct ProfileResult
 {
@@ -39,6 +39,8 @@ private:
     InstrumentationSession* m_CurrentSession;
     std::ofstream m_OutputStream;
     int m_ProfileCount;
+    std::mutex m_Mutex; // <<< ADD A MUTEX MEMBER
+
 public:
     Instrumentor()
         : m_CurrentSession(nullptr), m_ProfileCount(0)
@@ -47,25 +49,26 @@ public:
 
     void BeginSession(const std::string& name, const std::string& filepath = "/home/aero/results.json")
     {
+        std::lock_guard<std::mutex> lock(m_Mutex); // <<< ADD LOCK
         m_OutputStream.open(filepath);
         WriteHeader();
-        // ROS_INFO_STREAM("BENCHMARKING STARTED............");
         m_CurrentSession = new InstrumentationSession{ name };
     }
 
     void EndSession()
     {
+        std::lock_guard<std::mutex> lock(m_Mutex); // <<< ADD LOCK
         WriteFooter();
         m_OutputStream.close();
         delete m_CurrentSession;
         m_CurrentSession = nullptr;
         m_ProfileCount = 0;
-
-        ROS_INFO_STREAM("Footer written............");
     }
 
     void WriteProfile(const ProfileResult& result)
     {
+        std::lock_guard<std::mutex> lock(m_Mutex); // <<< ADD LOCK
+
         if (m_ProfileCount++ > 0)
             m_OutputStream << ",";
 
@@ -83,17 +86,21 @@ public:
         m_OutputStream << "}";
 
         m_OutputStream.flush();
-        
     }
 
     void WriteHeader()
     {
+        // This function is now called from within a locked section,
+        // so it doesn't need its own lock if only called by BeginSession.
+        // However, adding one makes it safe for other potential uses.
+        // For simplicity in this direct fix, we rely on the lock in BeginSession.
         m_OutputStream << "{\"otherData\": {},\"traceEvents\":[";
         m_OutputStream.flush();
     }
 
     void WriteFooter()
     {
+        // Same as WriteHeader, protected by the lock in EndSession.
         m_OutputStream << "]}";
         m_OutputStream.flush();
     }
@@ -105,6 +112,7 @@ public:
     }
 };
 
+// ... (InstrumentationTimer class remains unchanged) ...
 class InstrumentationTimer
 {
 public:
@@ -114,15 +122,12 @@ public:
     InstrumentationTimer(const char* name, std::shared_ptr<Instrumentor>& instrumentor_ptr) //pass by reference
         : m_Name(name), m_Stopped(false)
     {
-        // ROS_INFO_STREAM("Timer constructor called............");
         m_StartTimepoint = std::chrono::high_resolution_clock::now();
         ptr = instrumentor_ptr;
     }
 
     ~InstrumentationTimer()
     {
-
-        // ROS_INFO_STREAM("Timer deconstructor called............");
         if (!m_Stopped)
             Stop();
     }

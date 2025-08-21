@@ -4,7 +4,7 @@
 
 //TODO:1. flag for turning off benchmarking while building
 // 2. publish to /contact
-// 3. fix MPC benchmarking
+// 3. should check once that  it is the same as running 2 different instrumentor sessions
 #include <pinocchio/fwd.hpp>  // forward declarations must be included first.
 
 #include "legged_controllers/LeggedController.h"
@@ -85,8 +85,6 @@ bool LeggedController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
   safetyChecker_ = std::make_shared<SafetyChecker>(leggedInterface_->getCentroidalModelInfo());
   
   Benchmarker_ = std::make_shared<Instrumentor>();
-  mpcBenchmarker_ = std::make_shared<Instrumentor>();
-
   return true;
 }
 
@@ -111,8 +109,6 @@ void LeggedController::starting(const ros::Time& time) {
   controllerTime_ = ros::Time::now();
   mpcRunning_ = true;
   Benchmarker_->BeginSession("benchmarking");
-  mpcBenchmarker_->BeginSession("MPC benchmarking", "/home/aero/mpc_results.json");
-
 
 }
 
@@ -257,8 +253,6 @@ LeggedController::~LeggedController() {
   std::cerr << "\n###   Average : " << wbcTimer_.getAverageInMilliseconds() << "[ms].";
   
   Benchmarker_->EndSession();
-  mpcBenchmarker_->EndSession();
-
 }
 
 void LeggedController::setupLeggedInterface(const std::string& taskFile, const std::string& urdfFile, const std::string& referenceFile,
@@ -299,7 +293,7 @@ void LeggedController::setupMrt() {
             [&]() {
               if (mpcRunning_) {
                 // mpcTimer_.startTimer();
-                InstrumentationTimer timer5("MPC optimization", mpcBenchmarker_); //for some reason using Benchmarker_ creates an invalid file, is it because the destructor is not called properly?
+                InstrumentationTimer timer5("MPC optimization", Benchmarker_); //for some reason using Benchmarker_ creates an invalid file, is it because the destructor is not called properly?
                 mpcMrtInterface_->advanceMpc();
                 // mpcTimer_.endTimer();
               }
