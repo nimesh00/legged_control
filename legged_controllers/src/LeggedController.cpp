@@ -2,9 +2,8 @@
 // Created by qiayuan on 2022/6/24.
 //
 
-//TODO:1. flag for turning off benchmarking while building
-// 2. publish to /contact
-// 3. should check once that  it is the same as running 2 different instrumentor sessions
+//TODO: publish to /contact instead of /test_topic
+
 #include <pinocchio/fwd.hpp>  // forward declarations must be included first.
 
 #include "legged_controllers/LeggedController.h"
@@ -84,7 +83,10 @@ bool LeggedController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
   // Safety Checker
   safetyChecker_ = std::make_shared<SafetyChecker>(leggedInterface_->getCentroidalModelInfo());
   
+  #if PROFILING
   Benchmarker_ = std::make_shared<Instrumentor>();
+  #endif
+
   return true;
 }
 
@@ -108,13 +110,17 @@ void LeggedController::starting(const ros::Time& time) {
   ROS_INFO_STREAM("Initial policy has been received.");
   controllerTime_ = ros::Time::now();
   mpcRunning_ = true;
-  Benchmarker_->BeginSession("benchmarking");
+
+  #if PROFILING
+  Benchmarker_->BeginSession("benchmarking", filepath);
+  #endif 
 
 }
 
 void LeggedController::update(const ros::Time& time, const ros::Duration& period) {
   
-  InstrumentationTimer timer0("LeggedController::update", Benchmarker_);
+  PROFILE_SCOPE("LeggedController::update");
+  // InstrumentationTimer timer0("LeggedController::update", Benchmarker_);
   {
 
     vector_t optimizedState, optimizedInput;
@@ -122,13 +128,15 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
     vector_t x;
 
     {
-    InstrumentationTimer timer1("updateStateEstimation", Benchmarker_);
+      PROFILE_SCOPE("updateStateEstimation");
+    // InstrumentationTimer timer1("updateStateEstimation", Benchmarker_);
       updateStateEstimation(time, period);
     }
 
     {
-    InstrumentationTimer timer2("MPC update", Benchmarker_);
-    mpcMrtInterface_->setCurrentObservation(currentObservation_);
+      PROFILE_SCOPE("MPC update");
+    // InstrumentationTimer timer2("MPC update", Benchmarker_);
+      mpcMrtInterface_->setCurrentObservation(currentObservation_);
     // Load the latest MPC policy
       mpcMrtInterface_->updatePolicy();
 
@@ -136,14 +144,16 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
       mpcMrtInterface_->evaluatePolicy(currentObservation_.time, currentObservation_.state, optimizedState, optimizedInput, plannedMode);
     }
     {
-    InstrumentationTimer timer3("WBC update", Benchmarker_);
+      PROFILE_SCOPE("WBC update");
+    // InstrumentationTimer timer3("WBC update", Benchmarker_);
     // Whole body control
       currentObservation_.input = optimizedInput;
 
       x = wbc_->update(optimizedState, optimizedInput, measuredRbdState_, plannedMode, period.toSec());
     }
     {
-    InstrumentationTimer timer4("Other overhead", Benchmarker_);
+      PROFILE_SCOPE("OTHER OVERHEAD");
+    // InstrumentationTimer timer4("Other overhead", Benchmarker_);
 
     vector_t torque = x.tail(12);
 
@@ -244,15 +254,19 @@ LeggedController::~LeggedController() {
     mpcThread_.join();
   }
   std::cerr << "########################################################################";
-  std::cerr << "\n### MPC Benchmarking";
-  std::cerr << "\n###   Maximum : " << mpcTimer_.getMaxIntervalInMilliseconds() << "[ms].";
-  std::cerr << "\n###   Average : " << mpcTimer_.getAverageInMilliseconds() << "[ms]." << std::endl;
+  std::cerr << "\n### Ended MPC thread";
+  #if PROFILING
+  std::cerr << "\n###   Benchmarking was on, results saved at" << filepath << std::endl;
+  std::cerr << "\n### To view results, open the file on Chrome://tracing";
+  std::cerr << "\n### To turn off benchmarking, set PROFILING to 0 in legged_controllers/include/Instrumentor.h" ;
+  #else
+  std::cerr << "\n###   Benchmarking was off, to turn on benchmarking set PROFILING to 1 in legged_controllers/include/Instrumentor.h" << mpcTimer_.getAverageInMilliseconds() << "[ms]." << std::endl;
+  #endif
   std::cerr << "########################################################################";
-  std::cerr << "\n### WBC Benchmarking";
-  std::cerr << "\n###   Maximum : " << wbcTimer_.getMaxIntervalInMilliseconds() << "[ms].";
-  std::cerr << "\n###   Average : " << wbcTimer_.getAverageInMilliseconds() << "[ms].";
-  
+
+  #if PROFILING
   Benchmarker_->EndSession();
+  #endif
 }
 
 void LeggedController::setupLeggedInterface(const std::string& taskFile, const std::string& urdfFile, const std::string& referenceFile,
@@ -293,7 +307,8 @@ void LeggedController::setupMrt() {
             [&]() {
               if (mpcRunning_) {
                 // mpcTimer_.startTimer();
-                InstrumentationTimer timer5("MPC optimization", Benchmarker_); //for some reason using Benchmarker_ creates an invalid file, is it because the destructor is not called properly?
+                PROFILE_SCOPE("MPC optimization");
+                // InstrumentationTimer timer5("MPC optimization", Benchmarker_); //for some reason using Benchmarker_ creates an invalid file, is it because the destructor is not called properly?
                 mpcMrtInterface_->advanceMpc();
                 // mpcTimer_.endTimer();
               }

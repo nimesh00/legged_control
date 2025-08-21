@@ -13,13 +13,20 @@
 // You will probably want to macro-fy this, to switch on/off easily and use things like __FUNCSIG__ for the profile name.
 //
 #pragma once
-#define build 0
 #include <string>
 #include <chrono>
 #include <algorithm>
 #include <fstream>
 #include <thread>
 #include <mutex> // <<< ADD THIS INCLUDE
+
+#define PROFILING 1
+#if PROFILING
+const char* filepath = "/home/aero/results.json";
+#define PROFILE_SCOPE(name) InstrumentationTimer timer##__LINE__(name, Benchmarker_)
+#else
+#define PROFILE_SCOPE(name)
+#endif
 
 struct ProfileResult
 {

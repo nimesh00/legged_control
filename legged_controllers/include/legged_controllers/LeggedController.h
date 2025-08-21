@@ -87,9 +87,11 @@ class LeggedController : public controller_interface::MultiInterfaceController<H
   std::atomic_bool controllerRunning_{}, mpcRunning_{};
   benchmark::RepeatedTimer mpcTimer_;
   benchmark::RepeatedTimer wbcTimer_;
-  std::shared_ptr<Instrumentor> Benchmarker_;
   ros::Time controllerTime_;
   std_msgs::Float64MultiArray dataShow_;
+  #if PROFILING
+  std::shared_ptr<Instrumentor> Benchmarker_;
+  #endif
 };
 
 class LeggedCheaterController : public LeggedController {
