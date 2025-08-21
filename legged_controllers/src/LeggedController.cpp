@@ -2,7 +2,9 @@
 // Created by qiayuan on 2022/6/24.
 //
 
-//TODO: flag for turning off benchmarking while building
+//TODO:1. flag for turning off benchmarking while building
+// 2. publish to /contact
+// 3. fix MPC benchmarking
 #include <pinocchio/fwd.hpp>  // forward declarations must be included first.
 
 #include "legged_controllers/LeggedController.h"
@@ -83,6 +85,8 @@ bool LeggedController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
   safetyChecker_ = std::make_shared<SafetyChecker>(leggedInterface_->getCentroidalModelInfo());
   
   Benchmarker_ = std::make_shared<Instrumentor>();
+  mpcBenchmarker_ = std::make_shared<Instrumentor>();
+
   return true;
 }
 
@@ -107,12 +111,14 @@ void LeggedController::starting(const ros::Time& time) {
   controllerTime_ = ros::Time::now();
   mpcRunning_ = true;
   Benchmarker_->BeginSession("benchmarking");
+  mpcBenchmarker_->BeginSession("MPC benchmarking", "/home/aero/mpc_results.json");
+
 
 }
 
 void LeggedController::update(const ros::Time& time, const ros::Duration& period) {
   
-  InstrumentationTimer timer0("LeggedController::update", Benchmarker_);//pass by reference
+  InstrumentationTimer timer0("LeggedController::update", Benchmarker_);
   {
 
     vector_t optimizedState, optimizedInput;
@@ -213,33 +219,20 @@ void LeggedController::updateStateEstimation(const ros::Time& time, const ros::D
   vector_t kalmanTest = contactKal_->update(forceEstimate_.get(), contactProbabilityG_.get(), time, period);
   // FR, FL , RR, RL
 
+  // is it possible to make this more efficient?
   dataShow_.data.clear();
-  // visualization of cfp
-//  dataShow_.data.push_back(forceEstimate_->getProFromForce()[0]);
-  // dataShow_.data.push_back(forceEstimate_->getEstimateForceInDiscrete()[0]);
-  // dataShow_.data.push_back(forceEstimate_->getEstimateForceInDiscrete()[1]);
-  // dataShow_.data.push_back(forceEstimate_->getEstimateForceInDiscrete()[2]);
-  // dataShow_.data.push_back(forceEstimate_->getEstimateForceInDiscrete()[3]);
-  
   dataShow_.data.push_back(kalmanTest[0]);
   dataShow_.data.push_back(kalmanTest[1]);
   dataShow_.data.push_back(kalmanTest[2]);
   dataShow_.data.push_back(kalmanTest[3]);
-//  dataShow_.data.push_back(forceEstimate_->getProFromHeight()[0]);
-//  dataShow_.data.push_back(contactProbabilityG_->getProFromGait()[0]);
-//  dataShow_.data.push_back(contactHandles_[0].isContact());
-//  for ( scalar_t i:kalmanTest ) {
-//      dataShow_.data.push_back(i);
-//      if(i < 0.6) dataShow_.data.push_back(0);
-//      else dataShow_.data.push_back(1);
-//  }
-  
 
-// In your update function:
-if ((ros::Time::now() - lastPublishTime_).toSec() >= 0.10) {
-    testPublisher_.publish(dataShow_);
-    lastPublishTime_ = ros::Time::now();
-}
+  testPublisher_.publish(dataShow_);
+
+// // In your update function:
+// if ((ros::Time::now() - lastPublishTime_).toSec() >= 0.10) {
+//     testPublisher_.publish(dataShow_);
+//     lastPublishTime_ = ros::Time::now();
+// }
 
   currentObservation_.time += period.toSec();
   scalar_t yawLast = currentObservation_.state(9);
@@ -264,6 +257,8 @@ LeggedController::~LeggedController() {
   std::cerr << "\n###   Average : " << wbcTimer_.getAverageInMilliseconds() << "[ms].";
   
   Benchmarker_->EndSession();
+  mpcBenchmarker_->EndSession();
+
 }
 
 void LeggedController::setupLeggedInterface(const std::string& taskFile, const std::string& urdfFile, const std::string& referenceFile,
@@ -304,7 +299,7 @@ void LeggedController::setupMrt() {
             [&]() {
               if (mpcRunning_) {
                 // mpcTimer_.startTimer();
-                // InstrumentationTimer timer5("MPC optimization", Benchmarker_);
+                InstrumentationTimer timer5("MPC optimization", mpcBenchmarker_); //for some reason using Benchmarker_ creates an invalid file, is it because the destructor is not called properly?
                 mpcMrtInterface_->advanceMpc();
                 // mpcTimer_.endTimer();
               }

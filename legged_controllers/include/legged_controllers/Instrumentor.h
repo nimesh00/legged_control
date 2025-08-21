@@ -60,6 +60,8 @@ public:
         delete m_CurrentSession;
         m_CurrentSession = nullptr;
         m_ProfileCount = 0;
+
+        ROS_INFO_STREAM("Footer written............");
     }
 
     void WriteProfile(const ProfileResult& result)
