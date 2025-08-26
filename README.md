@@ -89,6 +89,8 @@ Build the source code of `legged_control` by:
 catkin build legged_controllers legged_unitree_description
 ```
 
+for running benchmarks (timing MPC optimization and update functions), set PROFILING to 1 in legged_control/legged_controllers/include/legged_controllers/Instrumentor.h
+
 Build the simulation (**DO NOT** run on the onboard computer)
 
 ```

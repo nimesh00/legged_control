@@ -1,0 +1,16 @@
+# On Raspberry pi compute module 5
+########################################################################
+### MPC Benchmarking
+###   Maximum : 42.2008[ms].
+###   Average : 29.2046[ms].
+########################################################################
+### WBC Benchmarking
+###   Maximum : 0.632852[ms].
+###   Average : 0.167992[ms].
+########################################################################
+The benchmarking is computed over 8778 iterations. 
+SQP Benchmarking	   :	Average time [ms]   (% of total runtime)
+	LQ Approximation   :	20.1724 [ms] 		(69.7466%)
+	Solve QP           :	6.41715 [ms] 		(22.1875%)
+	Linesearch         :	2.17627 [ms] 		(7.5245%)
+	Compute Controller :	0.156593 [ms] 		(0.541424%)
