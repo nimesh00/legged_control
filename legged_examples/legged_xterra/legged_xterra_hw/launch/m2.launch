@@ -1,0 +1,4 @@
+<launch>
+    <node name="legged_xterra_hw" pkg="legged_xterra_hw" type="legged_xterra_hw" respawn="false"
+          clear_params="true"/>
+</launch>

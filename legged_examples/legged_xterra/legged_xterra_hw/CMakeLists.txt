@@ -34,49 +34,23 @@ include_directories(
 
 link_directories(lib)
 
-set(SOURCE src/legged_unitree_hw.cpp src/UnitreeHW.cpp)
+set(SOURCE src/legged_xterra_hw.cpp src/xTerraHW.cpp)
 
-# add_executable(${PROJECT_NAME}_3_3_1
-#         ${SOURCE}
-#         )
-
-# target_compile_definitions(${PROJECT_NAME}_3_3_1 PRIVATE UNITREE_SDK_3_3_1)
-
-# target_link_libraries(${PROJECT_NAME}_3_3_1
-#         ${catkin_LIBRARIES}
-#         libunitree_legged_sdk_amd64_3_3_1.so lcm
-#         )
-
-add_executable(${PROJECT_NAME}_3_8_0
-        ${SOURCE}
-)
-
-target_compile_definitions(${PROJECT_NAME}_3_8_0 PRIVATE UNITREE_SDK_3_8_0)
-
-target_link_libraries(${PROJECT_NAME}_3_8_0
-        ${catkin_LIBRARIES}
-        libunitree_legged_sdk_amd64_3_8_0.a
-)
-
-idlcxx_generate(TARGET unitree_go2_msgs 
+file(GLOB XTERRA_MSG_FILES msgs/idl/*.idl)
+idlcxx_generate(TARGET xterra_dds_msgs
         FILES
-        include/dds/msgs/LowCmd.idl
-        include/dds/msgs/LowState.idl
+        ${XTERRA_MSG_FILES}
         WARNINGS no-implicit-extensibility
 )
 
-add_executable(${PROJECT_NAME}_m2
-        src/legged_unitree_dds.cpp
-        src/UnitreeDDS.cpp
+add_executable(${PROJECT_NAME}
+        ${SOURCE}
 )
 
-target_compile_definitions(${PROJECT_NAME}_m2 PRIVATE UNITREE_SDK_3_8_0)
-
-target_link_libraries(${PROJECT_NAME}_m2
+target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
-        unitree_go2_msgs
+        xterra_dds_msgs
         CycloneDDS-CXX::ddscxx
-        libunitree_legged_sdk_amd64_3_8_0.a
 )
 
 #########################
@@ -86,8 +60,7 @@ find_package(cmake_clang_tools QUIET)
 if (cmake_clang_tools_FOUND)
     message(STATUS "Run clang tooling for target " ${PROJECT_NAME})
     add_clang_tooling(
-        #     TARGETS ${PROJECT_NAME}_3_3_1 
-            TARGETS ${PROJECT_NAME}_3_8_0 TARGETS ${PROJECT_NAME}_m2
+            TARGETS ${PROJECT_NAME}
             SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include/legged_xterra_hw
             CT_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include/legged_xterra_hw
             CF_WERROR
@@ -101,8 +74,7 @@ endif (cmake_clang_tools_FOUND)
 
 # Mark executables and/or libraries for installation
 install(TARGETS 
-        # ${PROJECT_NAME}_3_3_1 
-        ${PROJECT_NAME}_3_8_0 ${PROJECT_NAME}_m2
+        ${PROJECT_NAME}
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -110,8 +82,7 @@ install(TARGETS
 
 # Mark cpp header files for installation
 install(DIRECTORY 
-        # include/${PROJECT_NAME}_3_3_1/ 
-        include/${PROJECT_NAME}_3_8_0/ inlcude/dds/
+        include/${PROJECT_NAME} inlcude/dds/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
         FILES_MATCHING PATTERN "*.h"
         )
