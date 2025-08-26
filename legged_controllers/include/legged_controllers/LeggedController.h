@@ -78,7 +78,7 @@ class LeggedController : public controller_interface::MultiInterfaceController<H
   std::shared_ptr<LeggedRobotVisualizer> robotVisualizer_;
   std::shared_ptr<LeggedSelfCollisionVisualization> selfCollisionVisualization_;
   ros::Publisher observationPublisher_;
-  ros::Publisher testPublisher_;
+  ros::Publisher contactPublisher_;
   ros::Time lastPublishTime_;
 
 

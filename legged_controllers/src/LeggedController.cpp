@@ -2,8 +2,8 @@
 // Created by qiayuan on 2022/6/24.
 //
 
-//TODO: publish to /contact instead of /test_topic
-
+//TODO:c1. remove mpctimer_ and wbctimer_ to optimize some memory
+// 2. Cleanup unitreedds.cpp
 #include <pinocchio/fwd.hpp>  // forward declarations must be included first.
 
 #include "legged_controllers/LeggedController.h"
@@ -128,7 +128,7 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
     vector_t x;
 
     {
-      PROFILE_SCOPE("updateStateEstimation");
+      // PROFILE_SCOPE("updateStateEstimation");
     // InstrumentationTimer timer1("updateStateEstimation", Benchmarker_);
       updateStateEstimation(time, period);
     }
@@ -184,6 +184,10 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
 
 void LeggedController::updateStateEstimation(const ros::Time& time, const ros::Duration& period) {
   vector_t jointPos(hybridJointHandles_.size()), jointVel(hybridJointHandles_.size()), jointEffort(hybridJointHandles_.size());
+  
+  {
+  PROFILE_SCOPE("contact updation");
+
   contact_flag_t contacts;
   Eigen::Quaternion<scalar_t> quat;
   contact_flag_t contactFlag;
@@ -232,14 +236,9 @@ void LeggedController::updateStateEstimation(const ros::Time& time, const ros::D
   dataShow_.data.push_back(kalmanTest[2]);
   dataShow_.data.push_back(kalmanTest[3]);
 
-  testPublisher_.publish(dataShow_);
-
-// // In your update function:
-// if ((ros::Time::now() - lastPublishTime_).toSec() >= 0.10) {
-//     testPublisher_.publish(dataShow_);
-//     lastPublishTime_ = ros::Time::now();
-// }
-
+  contactPublisher_.publish(dataShow_);
+  }
+  
   currentObservation_.time += period.toSec();
   scalar_t yawLast = currentObservation_.state(9);
   currentObservation_.state = rbdConversions_->computeCentroidalStateFromRbdModel(measuredRbdState_);
@@ -335,7 +334,7 @@ void LeggedController::setupForceEstimate() {
     forceEstimate_ = std::make_shared<DiscreteTimeLPF>(leggedInterface_->getPinocchioInterface(),
                                                        leggedInterface_->getCentroidalModelInfo(), *eeKinematicsPtr_);
     ros::NodeHandle nh;
-    testPublisher_ = nh.advertise<std_msgs::Float64MultiArray>("test_topic", 10); // this test can used to vis the results that we want
+    contactPublisher_ = nh.advertise<std_msgs::Float64MultiArray>("contact", 10); // this test can used to vis the results that we want
 }
 
 void LeggedController::setupContactProbability() {

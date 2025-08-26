@@ -44,7 +44,7 @@ bool UnitreeDDS::init(ros::NodeHandle& root_nh, ros::NodeHandle& robot_hw_nh) {
 
     joyPublisher_ = root_nh.advertise<sensor_msgs::Joy>("/joy", 10);
     contactPublisher_ = root_nh.advertise<std_msgs::Int16MultiArray>(
-        std::string("/contact"), 10);
+        std::string("/contact_delete_krna_hai"), 10);
     return true;
 }
 

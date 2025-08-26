@@ -20,7 +20,7 @@
 #include <thread>
 #include <mutex> // <<< ADD THIS INCLUDE
 
-#define PROFILING 1
+#define PROFILING 1 //1 to save benchmark results, 0 to disable
 #if PROFILING
 const char* filepath = "/home/aero/results.json";
 #define PROFILE_SCOPE(name) InstrumentationTimer timer##__LINE__(name, Benchmarker_)
