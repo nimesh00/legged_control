@@ -8,6 +8,8 @@
 #include <sensor_msgs/Joy.h>
 #include <std_msgs/Int16MultiArray.h>
 
+#include <eigen3/Eigen/Dense>
+
 namespace legged {
 bool xTerraHW::init(ros::NodeHandle& root_nh, ros::NodeHandle& robot_hw_nh) {
     if (!LeggedHW::init(root_nh, robot_hw_nh)) {
@@ -24,27 +26,55 @@ bool xTerraHW::init(ros::NodeHandle& root_nh, ros::NodeHandle& robot_hw_nh) {
     root_nh.getParam("robot_type", robot_type);
 
     sensor_data_sub_ = std::make_shared<DDSSubscriber<SensorData_>>(
-        "rt/m2_metal/sim/sensor_data",
+        "rt/m2_metal/hw/sensor_data",
         std::bind(&xTerraHW::sensorDataCb, this, std::placeholders::_1), 0);
     sensor_data_ = SensorData_();
 
-    gt_data_sub_ = std::make_shared<DDSSubscriber<QuadLog_>>(
-        "rt/m2_metal/sim/gt_data",
-        std::bind(&xTerraHW::gtDataCb, this, std::placeholders::_1), 0);
-    gt_data_ = QuadLog_();
+    // gt_data_sub_ = std::make_shared<DDSSubscriber<QuadLog_>>(
+    //     "rt/m2_metal/sim/gt_data",
+    //     std::bind(&xTerraHW::gtDataCb, this, std::placeholders::_1), 0);
+    // gt_data_ = QuadLog_();
+
+    joy_data_sub_ = std::make_shared<DDSSubscriber<ByteArray_>>(
+        "rt/keyboard_bytearray/joystick_data",
+        std::bind(&xTerraHW::joyDataCb, this, std::placeholders::_1), 0);
+    joy_data_ = ByteArray_();
+    joy_data_.data().resize(sizeof(XboxJoystickState));
 
     joint_cmd_pub_ = std::make_shared<DDSPublisher<JointData_>>(
-        "rt/m2_metal/sim/joint_command");
+        "rt/m2_metal/hw/joint_command");
     joint_cmd_ = JointData_();
 
     joyPublisher_ = root_nh.advertise<sensor_msgs::Joy>("/joy", 10);
-    contactPublisher_ = root_nh.advertise<std_msgs::Int16MultiArray>(
-        std::string("/contact"), 10);
+    // contactPublisher_ = root_nh.advertise<std_msgs::Int16MultiArray>(
+    //     std::string("/contact"), 10);
     return true;
 }
 
 void xTerraHW::sensorDataCb(const SensorData_& msg) { sensor_data_ = msg; }
-void xTerraHW::gtDataCb(const QuadLog_& msg) { gt_data_ = msg; }
+// void xTerraHW::gtDataCb(const QuadLog_& msg) { gt_data_ = msg; }
+void xTerraHW::joyDataCb(const ByteArray_& msg) { joy_data_ = msg; }
+
+using mat3x3 = Eigen::Matrix<double, 3, 3>;
+using vec3 = Eigen::Matrix<double, 3, 1>;
+using vec4 = Eigen::Matrix<double, 4, 1>;
+
+inline mat3x3 SkewSymm(const vec3& v) {
+    mat3x3 vx;
+    vx << 0, -v(2), v(1), v(2), 0, -v(0), -v(1), v(0), 0;
+
+    return vx;
+}
+
+inline mat3x3 QuatToRot(const vec4& q) {
+    // pinocchio convention of {x, y, z, w}
+    double q0 = q(3);
+    vec3 qv = q.block<3, 1>(0, 0);
+    mat3x3 Rot = (2 * q0 * q0 - 1) * mat3x3::Identity() +
+                 2 * q0 * SkewSymm(qv) + 2 * qv * qv.transpose();
+
+    return Rot;
+}
 
 void xTerraHW::read(const ros::Time& time, const ros::Duration& /*period*/) {
     for (int i = 0; i < 12; ++i) {
@@ -57,12 +87,21 @@ void xTerraHW::read(const ros::Time& time, const ros::Duration& /*period*/) {
     imuData_.ori_[1] = sensor_data_.quat()[1];
     imuData_.ori_[2] = sensor_data_.quat()[2];
     imuData_.ori_[3] = sensor_data_.quat()[3];
+    vec4 quat = vec4::Zero();
+    for (int i = 0; i < 4; ++i) quat(i) = sensor_data_.quat()[i];
+    mat3x3 Rot = QuatToRot(quat);
     imuData_.angularVel_[0] = sensor_data_.gyro()[0];
     imuData_.angularVel_[1] = sensor_data_.gyro()[1];
     imuData_.angularVel_[2] = sensor_data_.gyro()[2];
-    imuData_.linearAcc_[0] = sensor_data_.accel()[0];
-    imuData_.linearAcc_[1] = sensor_data_.accel()[1];
-    imuData_.linearAcc_[2] = sensor_data_.accel()[2];
+    vec3 acc_base = vec3::Zero();
+    for (int i = 0; i < 3; ++i) acc_base(i) = sensor_data_.accel()[i];
+    acc_base += Rot.transpose() * vec3(0, 0, 9.81);
+    imuData_.linearAcc_[0] = acc_base(0);
+    imuData_.linearAcc_[1] = acc_base(1);
+    imuData_.linearAcc_[2] = acc_base(2);
+    // imuData_.linearAcc_[0] = sensor_data_.accel()[0];
+    // imuData_.linearAcc_[1] = sensor_data_.accel()[1];
+    // imuData_.linearAcc_[2] = sensor_data_.accel()[2];
 
     // Set feedforward and velocity cmd to zero to avoid for safety when not
     // controller setCommand
@@ -80,15 +119,29 @@ void xTerraHW::read(const ros::Time& time, const ros::Duration& /*period*/) {
 
 void xTerraHW::write(const ros::Time& /*time*/,
                      const ros::Duration& /*period*/) {
-    for (int i = 0; i < 12; ++i) {
-        joint_cmd_.q()[remap_index[i]] =
-            static_cast<float>(jointData_[i].posDes_);
-        joint_cmd_.dq()[remap_index[i]] =
-            static_cast<float>(jointData_[i].velDes_);
-        joint_cmd_.kp()[remap_index[i]] = static_cast<float>(jointData_[i].kp_);
-        joint_cmd_.kd()[remap_index[i]] = static_cast<float>(jointData_[i].kd_);
-        joint_cmd_.tau()[remap_index[i]] =
-            static_cast<float>(jointData_[i].ff_);
+    if (e_stop_requested_) {
+        // Emergency stop requested, enter damping mode
+        for (int i = 0; i < 12; ++i) {
+            joint_cmd_.q()[remap_index[i]] =
+                static_cast<float>(jointData_[i].posDes_);
+            joint_cmd_.dq()[remap_index[i]] = 0;
+            joint_cmd_.kp()[remap_index[i]] = 0;
+            joint_cmd_.kd()[remap_index[i]] = 3;
+            joint_cmd_.tau()[remap_index[i]] = 0;
+        }
+    } else {
+        for (int i = 0; i < 12; ++i) {
+            joint_cmd_.q()[remap_index[i]] =
+                static_cast<float>(jointData_[i].posDes_);
+            joint_cmd_.dq()[remap_index[i]] =
+                static_cast<float>(jointData_[i].velDes_);
+            joint_cmd_.kp()[remap_index[i]] =
+                static_cast<float>(jointData_[i].kp_);
+            joint_cmd_.kd()[remap_index[i]] =
+                static_cast<float>(jointData_[i].kd_);
+            joint_cmd_.tau()[remap_index[i]] =
+                static_cast<float>(jointData_[i].ff_);
+        }
     }
     joint_cmd_pub_->publish(joint_cmd_);
 }
@@ -161,25 +214,32 @@ void xTerraHW::updateJoystick(const ros::Time& time) {
     if ((time - lastJoyPub_).toSec() < 1 / 50.) {
         return;
     }
-    // lastJoyPub_ = time;
-    // xRockerBtnDataStruct keyData;
-    // memcpy(&keyData, &lowState_.wirelessRemote[0], 40);
-    // sensor_msgs::Joy joyMsg;  // Pack as same as Logitech F710
-    // joyMsg.axes.push_back(-keyData.lx);
-    // joyMsg.axes.push_back(keyData.ly);
-    // joyMsg.axes.push_back(-keyData.rx);
-    // joyMsg.axes.push_back(keyData.ry);
-    // joyMsg.buttons.push_back(keyData.btn.components.X);
-    // joyMsg.buttons.push_back(keyData.btn.components.A);
-    // joyMsg.buttons.push_back(keyData.btn.components.B);
-    // joyMsg.buttons.push_back(keyData.btn.components.Y);
-    // joyMsg.buttons.push_back(keyData.btn.components.L1);
-    // joyMsg.buttons.push_back(keyData.btn.components.R1);
-    // joyMsg.buttons.push_back(keyData.btn.components.L2);
-    // joyMsg.buttons.push_back(keyData.btn.components.R2);
-    // joyMsg.buttons.push_back(keyData.btn.components.select);
-    // joyMsg.buttons.push_back(keyData.btn.components.start);
-    // joyPublisher_.publish(joyMsg);
+    lastJoyPub_ = time;
+    XboxJoystickState state;
+    memcpy(state.buffer, &joy_data_.data()[0], sizeof(XboxJoystickState));
+    sensor_msgs::Joy joyMsg;
+    joyMsg.axes.push_back(-state.fields.lx);
+    joyMsg.axes.push_back(state.fields.ly);
+    joyMsg.axes.push_back(-state.fields.rx);
+    joyMsg.axes.push_back(state.fields.ry);
+    joyMsg.buttons.push_back(IS_BUTTON_PRESSED(state, XBOX_BTN_X));
+    joyMsg.buttons.push_back(IS_BUTTON_PRESSED(state, XBOX_BTN_A));
+    joyMsg.buttons.push_back(IS_BUTTON_PRESSED(state, XBOX_BTN_B));
+    joyMsg.buttons.push_back(IS_BUTTON_PRESSED(state, XBOX_BTN_Y));
+    joyMsg.buttons.push_back(IS_BUTTON_PRESSED(state, XBOX_BTN_LB));
+    joyMsg.buttons.push_back(IS_BUTTON_PRESSED(state, XBOX_BTN_RB));
+    joyMsg.buttons.push_back(IS_BUTTON_PRESSED(state, XBOX_BTN_START));
+    joyMsg.buttons.push_back(IS_BUTTON_PRESSED(state, XBOX_BTN_BACK));
+    joyPublisher_.publish(joyMsg);
+
+    if (IS_BUTTON_PRESSED(state, XBOX_BTN_LB)) {
+        std::cout << "E-Stop Requested!!\n";
+        e_stop_requested_ = true;
+    }
+    if (IS_BUTTON_PRESSED(state, XBOX_BTN_RB)) {
+        std::cout << "Disabling E-Stop\n";
+        e_stop_requested_ = false;
+    }
 }
 
 void xTerraHW::updateContact(const ros::Time& time) {
@@ -188,11 +248,11 @@ void xTerraHW::updateContact(const ros::Time& time) {
     }
     lastContactPub_ = time;
 
-    std_msgs::Int16MultiArray contactMsg;
-    for (size_t i = 0; i < CONTACT_SENSOR_NAMES.size(); ++i) {
-        contactMsg.data.push_back(gt_data_.contact_force()[i]);
-    }
-    contactPublisher_.publish(contactMsg);
+    // std_msgs::Int16MultiArray contactMsg;
+    // for (size_t i = 0; i < CONTACT_SENSOR_NAMES.size(); ++i) {
+    //     contactMsg.data.push_back(gt_data_.contact_force()[i]);
+    // }
+    // contactPublisher_.publish(contactMsg);
 }
 
 }  // namespace legged

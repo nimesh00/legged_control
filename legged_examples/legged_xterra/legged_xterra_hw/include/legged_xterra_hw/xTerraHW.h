@@ -7,6 +7,7 @@
 
 #include <legged_hw/LeggedHW.h>
 
+#include "ByteArray.hpp"
 #include "JointData.hpp"
 #include "QuadLog.hpp"
 #include "SensorData.hpp"
@@ -33,6 +34,7 @@ struct ImuData {
 };
 
 using namespace xterra::msg::dds_;
+using namespace XTERRA_LEGGED_SDK;
 
 class xTerraHW : public LeggedHW {
    public:
@@ -82,19 +84,25 @@ class xTerraHW : public LeggedHW {
 
     void sensorDataCb(const SensorData_& msg);
     void gtDataCb(const QuadLog_& msg);
+    void joyDataCb(const ByteArray_& msg);
 
     SensorData_ sensor_data_;
     JointData_ joint_cmd_;
     QuadLog_ gt_data_;
+    ByteArray_ joy_data_;
+    XboxJoystickState joystick_state;
 
     std::shared_ptr<DDSSubscriber<SensorData_>> sensor_data_sub_;
     std::shared_ptr<DDSSubscriber<QuadLog_>> gt_data_sub_;
+    std::shared_ptr<DDSSubscriber<ByteArray_>> joy_data_sub_;
     std::shared_ptr<DDSPublisher<JointData_>> joint_cmd_pub_;
 
     MotorData jointData_[12]{};
     ImuData imuData_{};
     bool contactState_[4]{};
     int remap_index[12] = {3, 4, 5, 0, 1, 2, 9, 10, 11, 6, 7, 8};
+
+    bool e_stop_requested_ = false;
 
     int powerLimit_{};
     int contactThreshold_{};

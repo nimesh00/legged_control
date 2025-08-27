@@ -2,6 +2,8 @@
 // Created by qiayuan on 2022/6/24.
 //
 
+// clang-format off
+
 //TODO:c1. remove mpctimer_ and wbctimer_ to optimize some memory
 // 2. Cleanup unitreedds.cpp
 #include <pinocchio/fwd.hpp>  // forward declarations must be included first.

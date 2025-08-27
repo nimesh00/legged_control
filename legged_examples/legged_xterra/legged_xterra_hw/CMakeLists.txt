@@ -53,6 +53,12 @@ target_link_libraries(${PROJECT_NAME}
         CycloneDDS-CXX::ddscxx
 )
 
+add_executable(keyboard_interface_bytearray src/keyboard_interface_bytearray.cpp)
+target_link_libraries(keyboard_interface_bytearray
+        xterra_dds_msgs
+        CycloneDDS-CXX::ddscxx
+)
+
 #########################
 ###   CLANG TOOLING   ###
 #########################

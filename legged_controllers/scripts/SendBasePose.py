@@ -5,7 +5,7 @@ import numpy as np
 def talker():
     pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=1)
     rospy.init_node('send_base_pose', anonymous=True)
-    rate = rospy.Rate(10) # 10hz
+    rate = rospy.Rate(0.5) # 10hz
     while not rospy.is_shutdown():
         pose = PoseStamped()
         pose.header.stamp = rospy.Time.now()

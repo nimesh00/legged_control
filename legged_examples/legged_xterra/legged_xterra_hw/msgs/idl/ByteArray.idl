@@ -1,0 +1,9 @@
+module xterra {
+    module msg {
+        module dds_ {
+            struct ByteArray_ {
+                sequence<octet> data;
+            };
+        };
+    };
+};
