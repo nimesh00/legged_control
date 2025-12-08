@@ -22,8 +22,10 @@
 #include "legged_controllers/SafetyChecker.h"
 #include "legged_controllers/visualization/LeggedSelfCollisionVisualization.h"
 #include "legged_controllers/Instrumentor.h"
+#include "legged_controllers/MPCCache.h"
 
 #include <std_msgs/Float64MultiArray.h>
+
 
 namespace legged {
 using namespace ocs2;
@@ -81,6 +83,11 @@ class LeggedController : public controller_interface::MultiInterfaceController<H
   ros::Publisher contactPublisher_;
   ros::Time lastPublishTime_;
 
+  //datatype conversion 
+  std::vector<double> EigenToStd(const vector_t& eigen_vec);
+  vector_t StdToEigen(const std::vector<double>& std_vec);
+  
+  void cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
 
  private:
   std::thread mpcThread_;
@@ -89,6 +96,9 @@ class LeggedController : public controller_interface::MultiInterfaceController<H
   benchmark::RepeatedTimer wbcTimer_;
   ros::Time controllerTime_;
   std_msgs::Float64MultiArray dataShow_;
+  ::ros::Subscriber cmdVelSub_;
+  std::vector<double> cmdVel ={0.0,0.0,0.0,0.0};
+  std::vector<std::unique_ptr<MPCCache>> m_caches;
   #if PROFILING
   std::shared_ptr<Instrumentor> Benchmarker_;
   #endif

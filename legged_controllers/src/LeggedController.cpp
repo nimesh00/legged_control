@@ -83,6 +83,7 @@ bool LeggedController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
   // Safety Checker
   safetyChecker_ = std::make_shared<SafetyChecker>(leggedInterface_->getCentroidalModelInfo());
   
+  cmdVelSub_ = nh.subscribe("cmd_vel", 1, &LeggedController::cmdVelCallback, this);
   #if PROFILING
   Benchmarker_ = std::make_shared<Instrumentor>();
   #endif
@@ -111,6 +112,18 @@ void LeggedController::starting(const ros::Time& time) {
   controllerTime_ = ros::Time::now();
   mpcRunning_ = true;
 
+  m_caches.resize(16); //There are 16 modes
+  int i = 0;
+  for (auto& cache : m_caches) {
+      int cache_size = 512;
+      if (i == 6 || i == 9) {
+          cache_size = 8096;
+      }
+      cache = std::make_unique<MPCCache>(cache_size, 0.1);
+      //ignoring setting bin widths for now
+      i++;
+  }
+
   #if PROFILING
   Benchmarker_->BeginSession("benchmarking", filepath);
   #endif 
@@ -135,13 +148,68 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
 
     {
       PROFILE_SCOPE("MPC update");
-    // InstrumentationTimer timer2("MPC update", Benchmarker_);
-      mpcMrtInterface_->setCurrentObservation(currentObservation_);
-    // Load the latest MPC policy
-      mpcMrtInterface_->updatePolicy();
+      
+      // #define USE_CACHING
 
-      // Evaluate the current policy
-      mpcMrtInterface_->evaluatePolicy(currentObservation_.time, currentObservation_.state, optimizedState, optimizedInput, plannedMode);
+      #ifdef USE_CACHING
+      {
+      /*
+      1. build the feature vector
+      2. querynearest with a delta
+      3. if querynearest returns a solution, just set optimizedstate and optimizedinput to that, otherwise solve below
+      */
+
+      std::vector<double> feat = EigenToStd(currentObservation_.state.head(12));
+      feat.insert(feat.end(), cmdVel.begin(), cmdVel.end());
+
+      auto &cache = *m_caches[currentObservation_.mode];
+      double delta;
+      if(currentObservation_.mode==0 || currentObservation_.mode==15) delta = 0.0001;
+      else delta=0.5;
+
+      auto solptr=cache.queryNearest(feat, delta);
+      if (solptr== nullptr){
+        mpcMrtInterface_->setCurrentObservation(currentObservation_);
+        mpcMrtInterface_->updatePolicy();
+        mpcMrtInterface_->evaluatePolicy(currentObservation_.time, currentObservation_.state, optimizedState, optimizedInput, plannedMode);
+        
+        //changing to a std vec since, already have code to save it directly
+
+        std::vector<double> vec_optimizedState = EigenToStd(optimizedState);
+        std::vector<double> vec_optimizedInput = EigenToStd(optimizedInput);
+        std::vector<double> solution= vec_optimizedState;
+        solution.insert(solution.end(), vec_optimizedInput.begin(), vec_optimizedInput.end());
+        MPCCacheEntry entry;
+        entry.feat=feat;
+        entry.solution=solution;
+        //can also set trust radius
+
+        cache.insert(std::move(entry));
+      }
+      else{
+
+        std::cerr << "cache hit \n" << cache_hit++;
+        std::vector<double> solution = solptr->solution;
+        // first 24 -> optimizedState, last 24 -> optimizedInput
+        optimizedState = StdToEigen(std::vector<double>(solution.begin(), solution.begin() + 24));
+        optimizedInput = StdToEigen(std::vector<double>(solution.begin() + 24, solution.end()));
+        plannedMode = currentObservation_.mode;
+      }
+
+      }
+      #endif
+      #ifndef USE_CACHING
+      {
+         mpcMrtInterface_->setCurrentObservation(currentObservation_);
+      // Load the latest MPC policy
+        mpcMrtInterface_->updatePolicy();
+
+        // Evaluate the current policy
+        mpcMrtInterface_->evaluatePolicy(currentObservation_.time, currentObservation_.state, optimizedState, optimizedInput, plannedMode);
+      
+      }
+      #endif
+
     }
     {
       PROFILE_SCOPE("WBC update");
@@ -350,8 +418,29 @@ void LeggedCheaterController::setupStateEstimate(const std::string& /*taskFile*/
                                                             leggedInterface_->getCentroidalModelInfo(), *eeKinematicsPtr_);
 }
 
+std::vector<double> LeggedController::EigenToStd(const vector_t& eigen_vec) {
+    int size = eigen_vec.size();
+    std::vector<double> std_vec(size);
+    std::copy(eigen_vec.data(), eigen_vec.data() + size, std_vec.begin());
+    return std_vec;
+}
 
-}  // namespace legged
+vector_t LeggedController::StdToEigen(const std::vector<double>& std_vec) {
+    int size = static_cast<int>(std_vec.size());
+    // Create a map/view of the std::vector's data
+    Eigen::Map<const vector_t> map_vec(std_vec.data(), size);
+    // Copy the map's contents into a new, distinct Eigen vector
+    return map_vec;
+}
 
+void LeggedController::cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg) {
+    // Process the received Twist message
+    cmdVel[0] = msg->linear.x;
+    cmdVel[1] = msg->linear.y;
+    cmdVel[2] = msg->linear.z;
+    cmdVel[3] = msg->angular.z;
+}
+  // namespace legged
+}
 PLUGINLIB_EXPORT_CLASS(legged::LeggedController, controller_interface::ControllerBase)
 PLUGINLIB_EXPORT_CLASS(legged::LeggedCheaterController, controller_interface::ControllerBase)
