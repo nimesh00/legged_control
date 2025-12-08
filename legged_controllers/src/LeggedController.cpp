@@ -294,7 +294,8 @@ void LeggedController::setupMpc() {
 }
 
 void LeggedController::setupMrt() {
-  mpcMrtInterface_ = std::make_shared<MPC_MRT_Interface>(*mpc_);
+  ros::NodeHandle nh;
+  mpcMrtInterface_ = std::make_shared<MPC_MRT_Interface>(*mpc_, nh);
   mpcMrtInterface_->initRollout(&leggedInterface_->getRollout());
   mpcTimer_.reset();
 

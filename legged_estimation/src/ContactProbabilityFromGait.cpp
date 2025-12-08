@@ -9,8 +9,7 @@ namespace legged {
 ContactProbabilityFromGait::ContactProbabilityFromGait(ros::NodeHandle nodeHandle, const std::string &robotName)
     : receivedGait_({0.0, 1.0}, {ModeNumber::STANCE}) {
     contactProbability_.setZero();
-    cfgModeSequenceSubscriber_ = nodeHandle.subscribe(robotName + "_mpc_mode_schedule", 1, &ContactProbabilityFromGait::cfgModeSequenceCallback, this,
-                                                      ::ros::TransportHints().udp());
+    cfgModeSequenceSubscriber_ = nodeHandle.subscribe(robotName + "_mpc_mode_schedule", 1, &ContactProbabilityFromGait::cfgModeSequenceCallback, this);
 }
 
 int ContactProbabilityFromGait::getTheSetTimeIndex(const ModeSchedule& modeSchedule) {
